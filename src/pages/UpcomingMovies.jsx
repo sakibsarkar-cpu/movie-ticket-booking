@@ -83,10 +83,11 @@ function UpcomingMovies() {
 
     }, []);
 
+    const currentDate =
+        new Date();
+
     const today =
-        new Date()
-            .toISOString()
-            .split("T")[0];
+        `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}`;
 
     const upcomingMovies =
         movies.filter((movie) => {
@@ -100,10 +101,12 @@ function UpcomingMovies() {
 
             }
 
-            return (
-                movie.releaseDate >
-                today
-            );
+            const releaseDate =
+                new Date(movie.releaseDate)
+                    .toISOString()
+                    .split("T")[0];
+
+            return releaseDate > today;
 
         });
 
