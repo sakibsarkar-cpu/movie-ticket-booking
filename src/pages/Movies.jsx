@@ -54,14 +54,37 @@ function Movies() {
                 const data =
                     await response.json();
 
+                const today =
+                    new Date();
+
+                const todayDate =
+                    `${today.getFullYear()}-${String(
+                        today.getMonth() + 1
+                    ).padStart(2, "0")}-${String(
+                        today.getDate()
+                    ).padStart(2, "0")}`;
+
                 const formattedMovies =
                     Array.isArray(data)
-                        ? data.map((movie) => ({
-                            ...movie,
-                            genre:
-                                movie.genreName ||
-                                ""
-                        }))
+                        ? data
+                            .filter((movie) => {
+
+                                if (!movie.releaseDate) {
+                                    return true;
+                                }
+
+                                return (
+                                    movie.releaseDate <=
+                                    todayDate
+                                );
+
+                            })
+                            .map((movie) => ({
+                                ...movie,
+                                genre:
+                                    movie.genreName ||
+                                    ""
+                            }))
                         : [];
 
                 setMovies(

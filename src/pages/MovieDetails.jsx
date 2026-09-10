@@ -352,12 +352,19 @@ function MovieDetails() {
                     schedule.status === "Active" ||
                     schedule.status === "active";
 
+                const isScheduleInFuture =
+                    !isPastSchedule(
+                        schedule.showDate,
+                        schedule.startTime
+                    );
+
                 return (
                     isMovieMatch &&
                     isBranchValid &&
                     isScreenValid &&
                     isPriceValid &&
-                    isScheduleActive
+                    isScheduleActive &&
+                    isScheduleInFuture
                 );
 
             }
@@ -906,6 +913,149 @@ function MovieDetails() {
 
         </div>
 
+    );
+
+}
+
+function isPastSchedule(
+    showDate,
+    startTime
+) {
+
+    if (!showDate) {
+
+        return false;
+
+    }
+
+    const today =
+        new Date();
+
+    const [
+        year,
+        month,
+        day
+    ] =
+        showDate
+            .split("-")
+            .map(Number);
+
+    const showDateOnly =
+        new Date(
+            year,
+            month - 1,
+            day
+        );
+
+    const todayDateOnly =
+        new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            today.getDate()
+        );
+
+    if (
+        showDateOnly <
+        todayDateOnly
+    ) {
+
+        return true;
+
+    }
+
+    if (
+        showDateOnly >
+        todayDateOnly
+    ) {
+
+        return false;
+
+    }
+
+    if (!startTime) {
+
+        return false;
+
+    }
+
+    let hours;
+    let minutes;
+
+    if (
+        startTime.includes("AM") ||
+        startTime.includes("PM")
+    ) {
+
+        const parts =
+            startTime
+                .trim()
+                .split(" ");
+
+        const timeParts =
+            parts[0]
+                .split(":");
+
+        hours =
+            Number(
+                timeParts[0]
+            );
+
+        minutes =
+            Number(
+                timeParts[1]
+            );
+
+        const period =
+            parts[1];
+
+        if (
+            period === "PM" &&
+            hours !== 12
+        ) {
+
+            hours += 12;
+
+        }
+
+        if (
+            period === "AM" &&
+            hours === 12
+        ) {
+
+            hours = 0;
+
+        }
+
+    } else {
+
+        const timeParts =
+            startTime
+                .split(":");
+
+        hours =
+            Number(
+                timeParts[0]
+            );
+
+        minutes =
+            Number(
+                timeParts[1]
+            );
+
+    }
+
+    const showDateTime =
+        new Date(
+            year,
+            month - 1,
+            day,
+            hours,
+            minutes
+        );
+
+    return (
+        showDateTime <=
+        today
     );
 
 }

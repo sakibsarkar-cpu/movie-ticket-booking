@@ -456,6 +456,17 @@ function Booking() {
     const toggleSeat =
         (seatNumber) => {
 
+            if (
+                isPastSchedule(
+                    schedule?.showDate,
+                    schedule?.startTime
+                )
+            ) {
+
+                return;
+
+            }
+
             const seat =
                 screenSeats.find(
                     (item) =>
@@ -584,6 +595,21 @@ function Booking() {
         () => {
 
             if (
+                isPastSchedule(
+                    schedule?.showDate,
+                    schedule?.startTime
+                )
+            ) {
+
+                setRecommendationMessage(
+                    "This showtime has already passed."
+                );
+
+                return;
+
+            }
+
+            if (
                 recommendedSeats.length ===
                 0
             ) {
@@ -612,6 +638,23 @@ function Booking() {
 
     const handleContinue =
         async () => {
+
+            if (
+                isPastSchedule(
+                    schedule?.showDate,
+                    schedule?.startTime
+                )
+            ) {
+
+                alert(
+                    "This showtime has already passed. New bookings are not allowed."
+                );
+
+                setSelectedSeats([]);
+
+                return;
+
+            }
 
             if (
                 selectedSeats.length ===
@@ -678,6 +721,23 @@ function Booking() {
                         ticketPricesData.message ||
                         "Failed to check ticket price"
                     );
+
+                }
+
+                if (
+                    isPastSchedule(
+                        schedule?.showDate,
+                        schedule?.startTime
+                    )
+                ) {
+
+                    alert(
+                        "This showtime has already passed. New bookings are not allowed."
+                    );
+
+                    setSelectedSeats([]);
+
+                    return;
 
                 }
 
@@ -858,6 +918,69 @@ function Booking() {
                     >
                         Back to Movies
                     </Link>
+
+                </div>
+
+            </div>
+
+        );
+
+    }
+
+    if (
+        isPastSchedule(
+            schedule.showDate,
+            schedule.startTime
+        )
+    ) {
+
+        return (
+
+            <div className="min-h-screen bg-base-200 py-10">
+
+                <div className="w-[90%] max-w-6xl mx-auto">
+
+                    <Link
+                        to={`/movies/${movie.movieID}`}
+                        className="btn btn-ghost mb-6"
+                    >
+
+                        <FaArrowLeft />
+
+                        Back to Showtimes
+
+                    </Link>
+
+                    <div className="card bg-base-100 shadow-md">
+
+                        <div className="card-body text-center py-16">
+
+                            <h1 className="text-3xl font-bold">
+                                Showtime Has Passed
+                            </h1>
+
+                            <p className="text-base-content/60 mt-3">
+                                This showtime has already started and is no longer available for booking.
+                            </p>
+
+                            <p className="font-semibold mt-4">
+                                {schedule.showDate}
+                                {" • "}
+                                {formatTime(
+                                    schedule.startTime
+                                )}
+                            </p>
+
+                            <Link
+                                to={`/movies/${movie.movieID}`}
+                                className="btn btn-primary mt-6"
+                            >
+                                Back to Showtimes
+                            </Link>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
@@ -1336,6 +1459,150 @@ function Booking() {
 
         </div>
 
+    );
+
+}
+
+function isPastSchedule(
+    showDate,
+    startTime
+) {
+
+    if (!showDate) {
+
+        return false;
+
+    }
+
+    const today =
+        new Date();
+
+    const [
+        year,
+        month,
+        day
+    ] =
+        showDate
+            .split("-")
+            .map(Number);
+
+    const showDateOnly =
+        new Date(
+            year,
+            month - 1,
+            day
+        );
+
+    const todayDateOnly =
+        new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            today.getDate()
+        );
+
+    if (
+        showDateOnly <
+        todayDateOnly
+    ) {
+
+        return true;
+
+    }
+
+    if (
+        showDateOnly >
+        todayDateOnly
+    ) {
+
+        return false;
+
+    }
+
+    if (!startTime) {
+
+        return false;
+
+    }
+
+    let hours;
+    let minutes;
+
+    if (
+        startTime.includes("AM") ||
+        startTime.includes("PM")
+    ) {
+
+        const parts =
+            startTime
+                .trim()
+                .split(" ");
+
+        const timeParts =
+            parts[0]
+                .split(":");
+
+        hours =
+            Number(
+                timeParts[0]
+            );
+
+        minutes =
+            Number(
+                timeParts[1]
+            );
+
+        const period =
+            parts[1]
+                ?.toUpperCase();
+
+        if (
+            period === "PM" &&
+            hours !== 12
+        ) {
+
+            hours += 12;
+
+        }
+
+        if (
+            period === "AM" &&
+            hours === 12
+        ) {
+
+            hours = 0;
+
+        }
+
+    } else {
+
+        const timeParts =
+            startTime
+                .split(":");
+
+        hours =
+            Number(
+                timeParts[0]
+            );
+
+        minutes =
+            Number(
+                timeParts[1]
+            );
+
+    }
+
+    const showDateTime =
+        new Date(
+            year,
+            month - 1,
+            day,
+            hours,
+            minutes
+        );
+
+    return (
+        showDateTime <=
+        today
     );
 
 }
