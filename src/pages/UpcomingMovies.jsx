@@ -6,6 +6,10 @@ import {
     FaFilm,
 } from "react-icons/fa";
 
+import johnWick from "../assets/posters/john-wick.jpg";
+import theParadise from "../assets/posters/the-paradise.jpg";
+import insidious from "../assets/posters/insidious.jpg";
+
 function UpcomingMovies() {
 
     const [movies, setMovies] =
@@ -16,6 +20,16 @@ function UpcomingMovies() {
 
     const [loadError, setLoadError] =
         useState("");
+
+    const posterImages = {
+        "john-wick.jpg": johnWick,
+        "the-paradise.jpg": theParadise,
+        "insidious.jpg": insidious,
+    };
+
+    const getPoster = (imageName) => {
+        return posterImages[imageName] || "";
+    };
 
     useEffect(() => {
 
@@ -202,107 +216,116 @@ function UpcomingMovies() {
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
                         {upcomingMovies.map(
-                            (movie) => (
+                            (movie) => {
 
-                                <div
-                                    key={
-                                        movie.movieID
-                                    }
-                                    className="card bg-base-100 shadow-md hover:shadow-xl transition"
-                                >
+                                const poster =
+                                    getPoster(
+                                        movie.image
+                                    );
 
-                                    <figure className="h-72">
+                                return (
 
-                                        {movie.image ? (
+                                    <div
+                                        key={
+                                            movie.movieID
+                                        }
+                                        className="card bg-base-100 shadow-md hover:shadow-xl transition"
+                                    >
 
-                                            <img
-                                                src={
-                                                    movie.image
-                                                }
-                                                alt={
+                                        <figure className="h-72">
+
+                                            {poster ? (
+
+                                                <img
+                                                    src={
+                                                        poster
+                                                    }
+                                                    alt={
+                                                        movie.title
+                                                    }
+                                                    className="w-full h-full object-cover"
+                                                />
+
+                                            ) : (
+
+                                                <div className="w-full h-full bg-base-300 flex items-center justify-center">
+
+                                                    <FaFilm className="text-6xl text-base-content/30" />
+
+                                                </div>
+
+                                            )}
+
+                                        </figure>
+
+                                        <div className="card-body">
+
+                                            <h2 className="card-title">
+                                                {
                                                     movie.title
                                                 }
-                                                className="w-full h-full object-cover"
-                                            />
+                                            </h2>
 
-                                        ) : (
+                                            {movie.genre && (
 
-                                            <div className="w-full h-full bg-base-300 flex items-center justify-center">
+                                                <p className="text-sm text-base-content/60">
 
-                                                <FaFilm className="text-6xl text-base-content/30" />
-
-                                            </div>
-
-                                        )}
-
-                                    </figure>
-
-                                    <div className="card-body">
-
-                                        <h2 className="card-title">
-                                            {
-                                                movie.title
-                                            }
-                                        </h2>
-
-                                        {movie.genre && (
-
-                                            <p className="text-sm text-base-content/60">
-
-                                                {Array.isArray(
-                                                    movie.genre
-                                                )
-                                                    ? movie.genre.join(
-                                                        ", "
+                                                    {Array.isArray(
+                                                        movie.genre
                                                     )
-                                                    : movie.genre}
+                                                        ? movie.genre.join(
+                                                            ", "
+                                                        )
+                                                        : movie.genre}
 
-                                            </p>
+                                                </p>
 
-                                        )}
+                                            )}
 
-                                        {movie.releaseDate && (
+                                            {movie.releaseDate && (
 
-                                            <div className="flex items-center gap-2 text-sm mt-2">
+                                                <div className="flex items-center gap-2 text-sm mt-2">
 
-                                                <FaCalendarAlt className="text-primary" />
+                                                    <FaCalendarAlt className="text-primary" />
 
-                                                <span>
+                                                    <span>
+                                                        {
+                                                            movie.releaseDate
+                                                        }
+                                                    </span>
+
+                                                </div>
+
+                                            )}
+
+                                            {movie.description && (
+
+                                                <p className="text-sm text-base-content/60 mt-2 line-clamp-3">
                                                     {
-                                                        movie.releaseDate
+                                                        movie.description
                                                     }
-                                                </span>
+                                                </p>
+
+                                            )}
+
+                                            <div className="card-actions mt-4">
+
+                                                <Link
+                                                    to={`/movies/${movie.movieID}`}
+                                                    className="btn btn-primary btn-sm w-full"
+                                                >
+                                                    View Movie
+                                                </Link>
 
                                             </div>
-
-                                        )}
-
-                                        {movie.description && (
-
-                                            <p className="text-sm text-base-content/60 mt-2 line-clamp-3">
-                                                {
-                                                    movie.description
-                                                }
-                                            </p>
-
-                                        )}
-
-                                        <div className="card-actions mt-4">
-
-                                            <Link
-                                                to={`/movies/${movie.movieID}`}
-                                                className="btn btn-primary btn-sm w-full"
-                                            >
-                                                View Movie
-                                            </Link>
 
                                         </div>
 
                                     </div>
 
-                                </div>
+                                );
 
-                            )
+                            }
                         )}
 
                     </div>

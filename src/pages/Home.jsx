@@ -8,6 +8,44 @@ import {
     FaStar,
 } from "react-icons/fa";
 
+import avatar from "../assets/posters/avatar.jpg";
+import avengersEndgame from "../assets/posters/avengers-endgame.jpg";
+import darkKnight from "../assets/posters/dark-knight.jpg";
+import inception from "../assets/posters/inception.jpg";
+import insidious from "../assets/posters/insidious.jpg";
+import interstellar from "../assets/posters/interstellar.jpg";
+import johnWick from "../assets/posters/john-wick.jpg";
+import matrix from "../assets/posters/matrix.jpg";
+import parasite from "../assets/posters/parasite.jpg";
+import surongo from "../assets/posters/surongo.jpg";
+import theParadise from "../assets/posters/the-paradise.jpg";
+
+const posterImages = {
+    "avatar.jpg": avatar,
+    "avengers-endgame.jpg": avengersEndgame,
+    "dark-knight.jpg": darkKnight,
+    "inception.jpg": inception,
+    "insidious.jpg": insidious,
+    "interstellar.jpg": interstellar,
+    "john-wick.jpg": johnWick,
+    "matrix.jpg": matrix,
+    "parasite.jpg": parasite,
+    "surongo.jpg": surongo,
+    "the-paradise.jpg": theParadise,
+};
+
+function getMoviePoster(image) {
+    if (!image) {
+        return "";
+    }
+
+    if (posterImages[image]) {
+        return posterImages[image];
+    }
+
+    return image;
+}
+
 function Home() {
 
     const [movies, setMovies] =
@@ -351,7 +389,7 @@ function Home() {
                                     <div className="flex justify-center md:justify-end">
 
                                         <img
-                                            src={activeMovie.image}
+                                            src={getMoviePoster(activeMovie.image)}
                                             alt={activeMovie.title}
                                             className="w-64 md:w-72 h-[380px] md:h-[430px] object-cover rounded-xl shadow-2xl"
                                         />
@@ -472,7 +510,9 @@ function Home() {
 
                                                             <img
                                                                 src={
-                                                                    movie.image
+                                                                    getMoviePoster(
+                                                                        movie.image
+                                                                    )
                                                                 }
                                                                 alt={
                                                                     movie.title
@@ -611,7 +651,9 @@ function Home() {
 
                                                             <img
                                                                 src={
-                                                                    movie.image
+                                                                    getMoviePoster(
+                                                                        movie.image
+                                                                    )
                                                                 }
                                                                 alt={
                                                                     movie.title

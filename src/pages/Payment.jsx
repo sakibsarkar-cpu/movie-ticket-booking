@@ -1,3 +1,6 @@
+import bkashLogo from "../assets/bkash logo.webp";
+import nagadLogo from "../assets/nagad logoo.png";
+import upayLogo from "../assets/upay logo.webp";
 import { useEffect, useState } from "react";
 import {
     Link,
@@ -86,6 +89,16 @@ function Payment() {
         paymentMethod,
         setPaymentMethod,
     ] = useState("card");
+
+    const [
+        mobileBankingProvider,
+        setMobileBankingProvider,
+    ] = useState("bkash");
+
+    const [
+        mobileBankingNumber,
+        setMobileBankingNumber,
+    ] = useState("");
 
     const [
         paymentSuccess,
@@ -756,6 +769,33 @@ function Payment() {
 
             }
 
+            if (
+                paymentMethod ===
+                "mobile banking"
+            ) {
+
+                const cleanMobileNumber =
+                    mobileBankingNumber.trim();
+
+                const mobileNumberRegex =
+                    /^01[3-9]\d{8}$/;
+
+                if (
+                    !mobileNumberRegex.test(
+                        cleanMobileNumber
+                    )
+                ) {
+
+                    alert(
+                        "Please enter a valid 11-digit Bangladesh mobile banking number."
+                    );
+
+                    return;
+
+                }
+
+            }
+
             try {
 
                 const occupiedSeats =
@@ -1301,6 +1341,7 @@ function Payment() {
                 </div>
 
             </div>
+
         );
 
     }
@@ -1548,7 +1589,10 @@ function Payment() {
                                 </span>
 
                                 <span className="font-semibold capitalize">
-                                    {paymentMethod}
+                                    {paymentMethod ===
+                                    "mobile banking"
+                                        ? `${mobileBankingProvider} Mobile Banking`
+                                        : paymentMethod}
                                 </span>
 
                             </div>
@@ -2038,11 +2082,11 @@ function Payment() {
 
                                     <button
                                         type="button"
-                                        onClick={() =>
+                                        onClick={() => {
                                             setPaymentMethod(
                                                 "mobile banking"
-                                            )
-                                        }
+                                            );
+                                        }}
                                         className={`btn h-20 flex-col ${
                                             paymentMethod ===
                                             "mobile banking"
@@ -2053,7 +2097,7 @@ function Payment() {
 
                                         <FaMobileAlt />
 
-                                        Mobile
+                                        Mobile Banking
 
                                     </button>
 
@@ -2140,15 +2184,131 @@ function Payment() {
                                     <div className="mt-6">
 
                                         <label className="label">
-                                            Mobile Banking Number
+
+                                            <span className="label-text font-semibold">
+                                                Select Mobile Banking
+                                            </span>
+
                                         </label>
 
-                                        <input
-                                            type="tel"
-                                            placeholder="01XXXXXXXXX"
-                                            className="input input-bordered w-full"
-                                            required
-                                        />
+                                        <div className="grid grid-cols-3 gap-3">
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setMobileBankingProvider(
+                                                        "bkash"
+                                                    )
+                                                }
+                                                className={`btn h-20 ${
+                                                    mobileBankingProvider ===
+                                                    "bkash"
+                                                        ? "border-2 border-primary bg-primary/10"
+                                                        : "btn-outline"
+                                                }`}
+                                            >
+
+                                                <img
+                                                    src={
+                                                        bkashLogo
+                                                    }
+                                                    alt="bKash"
+                                                    className="h-18 w-auto object-contain"
+                                                />
+
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setMobileBankingProvider(
+                                                        "nagad"
+                                                    )
+                                                }
+                                                className={`btn h-20 ${
+                                                    mobileBankingProvider ===
+                                                    "nagad"
+                                                        ? "border-2 border-primary bg-primary/10"
+                                                        : "btn-outline"
+                                                }`}
+                                            >
+
+                                                <img
+                                                    src={
+                                                        nagadLogo
+                                                    }
+                                                    alt="Nagad"
+                                                   className="h-18 w-auto object-contain"
+                                                />
+
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setMobileBankingProvider(
+                                                        "upay"
+                                                    )
+                                                }
+                                                className={`btn h-20 ${
+                                                    mobileBankingProvider ===
+                                                    "upay"
+                                                        ? "border-2 border-primary bg-primary/10"
+                                                        : "btn-outline"
+                                                }`}
+                                            >
+
+                                                <img
+                                                    src={
+                                                        upayLogo
+                                                    }
+                                                    alt="Upay"
+                                                    className="h-18 w-auto object-contain"
+                                                />
+
+                                            </button>
+
+                                        </div>
+
+                                        <div className="mt-5">
+
+                                            <label className="label">
+
+                                                <span className="label-text">
+                                                    {mobileBankingProvider ===
+                                                    "bkash"
+                                                        ? "bKash Number"
+                                                        : mobileBankingProvider ===
+                                                            "nagad"
+                                                            ? "Nagad Number"
+                                                            : "Upay Number"}
+                                                </span>
+
+                                            </label>
+
+                                            <input
+                                                type="tel"
+                                                value={
+                                                    mobileBankingNumber
+                                                }
+                                                onChange={(
+                                                    event
+                                                ) =>
+                                                    setMobileBankingNumber(
+                                                        event.target.value
+                                                    )
+                                                }
+                                                placeholder="01XXXXXXXXX"
+                                                maxLength="11"
+                                                className="input input-bordered w-full"
+                                                required
+                                            />
+
+                                            <p className="text-xs text-base-content/60 mt-2">
+                                                Enter your 11-digit Bangladesh mobile banking number.
+                                            </p>
+
+                                        </div>
 
                                     </div>
 

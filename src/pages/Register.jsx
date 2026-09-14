@@ -39,13 +39,32 @@ function Register() {
             return;
         }
 
-        if (password !== confirmPassword) {
-            setError("Passwords do not match.");
+        const nameRegex = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
+        const emailRegex = /^[A-Za-z0-9._%+-]+@gmail\.com$/;
+        const phoneRegex = /^01[3-9]\d{8}$/;
+
+        if (!nameRegex.test(name)) {
+            setError("Name can contain letters and spaces only.");
+            return;
+        }
+
+        if (!emailRegex.test(email)) {
+            setError("Please enter a valid Gmail address.");
+            return;
+        }
+
+        if (!phoneRegex.test(phone)) {
+            setError("Phone number must be a valid 11-digit Bangladesh number.");
             return;
         }
 
         if (password.length < 6) {
             setError("Password must be at least 6 characters.");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match.");
             return;
         }
 
@@ -155,7 +174,7 @@ function Register() {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                placeholder="Enter your email"
+                                placeholder="Enter your Gmail"
                                 className="input input-bordered w-full"
                                 required
                             />
@@ -177,8 +196,9 @@ function Register() {
                                 name="phone"
                                 value={formData.phone}
                                 onChange={handleChange}
-                                placeholder="Enter your phone number"
+                                placeholder="Enter your 11-digit phone number"
                                 className="input input-bordered w-full"
+                                maxLength="11"
                                 required
                             />
 

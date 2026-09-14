@@ -7,6 +7,18 @@ import {
     FaMapMarkerAlt,
 } from "react-icons/fa";
 
+import avatar from "../assets/posters/avatar.jpg";
+import avengersEndgame from "../assets/posters/avengers-endgame.jpg";
+import darkKnight from "../assets/posters/dark-knight.jpg";
+import inception from "../assets/posters/inception.jpg";
+import insidious from "../assets/posters/insidious.jpg";
+import interstellar from "../assets/posters/interstellar.jpg";
+import johnWick from "../assets/posters/john-wick.jpg";
+import matrix from "../assets/posters/matrix.jpg";
+import parasite from "../assets/posters/parasite.jpg";
+import surongo from "../assets/posters/surongo.jpg";
+import theParadise from "../assets/posters/the-paradise.jpg";
+
 function MovieDetails() {
 
     const { movieID } = useParams();
@@ -37,6 +49,24 @@ function MovieDetails() {
 
     const [errorMessage, setErrorMessage] =
         useState("");
+
+    const posterImages = {
+        "avatar.jpg": avatar,
+        "avengers-endgame.jpg": avengersEndgame,
+        "dark-knight.jpg": darkKnight,
+        "inception.jpg": inception,
+        "insidious.jpg": insidious,
+        "interstellar.jpg": interstellar,
+        "john-wick.jpg": johnWick,
+        "matrix.jpg": matrix,
+        "parasite.jpg": parasite,
+        "surongo.jpg": surongo,
+        "the-paradise.jpg": theParadise,
+    };
+
+    const getPoster = (imageName) => {
+        return posterImages[imageName] || "";
+    };
 
     useEffect(() => {
 
@@ -482,11 +512,21 @@ function MovieDetails() {
 
                         <div>
 
-                            <img
-                                src={movie.image}
-                                alt={movie.title}
-                                className="w-full max-w-sm mx-auto rounded-xl shadow-lg"
-                            />
+                            {getPoster(movie.image) ? (
+
+                                <img
+                                    src={getPoster(movie.image)}
+                                    alt={movie.title}
+                                    className="w-full max-w-sm mx-auto rounded-xl shadow-lg"
+                                />
+
+                            ) : (
+
+                                <div className="w-full max-w-sm mx-auto h-[500px] rounded-xl shadow-lg bg-base-200 flex items-center justify-center text-base-content/40">
+                                    No Image
+                                </div>
+
+                            )}
 
                         </div>
 
@@ -587,7 +627,7 @@ function MovieDetails() {
 
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-5 mb-10">
+                    <div className="grid md:grid-cols-2 gap-5 mb-10 max-w-4xl mx-auto">
 
                         <div>
 

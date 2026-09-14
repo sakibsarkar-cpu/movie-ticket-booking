@@ -9,13 +9,47 @@ router.post("/register", async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
 
-        if (!name || !email || !password) {
+        if (!name || !email || !password || !phone) {
             return res.status(400).json({
-                message: "Name, email and password are required"
+                message: "All fields are required"
             });
         }
 
-        const existingUser = await User.findOne({ email });
+        const cleanName = name.trim();
+        const cleanEmail = email.trim().toLowerCase();
+        const cleanPhone = phone.trim();
+
+        const nameRegex = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
+        const emailRegex = /^[A-Za-z0-9._%+-]+@gmail\.com$/;
+        const phoneRegex = /^01[3-9]\d{8}$/;
+
+        if (!nameRegex.test(cleanName)) {
+            return res.status(400).json({
+                message: "Name can contain letters and spaces only"
+            });
+        }
+
+        if (!emailRegex.test(cleanEmail)) {
+            return res.status(400).json({
+                message: "Please enter a valid Gmail address"
+            });
+        }
+
+        if (!phoneRegex.test(cleanPhone)) {
+            return res.status(400).json({
+                message: "Phone number must be a valid 11-digit Bangladesh number"
+            });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({
+                message: "Password must be at least 6 characters"
+            });
+        }
+
+        const existingUser = await User.findOne({
+            email: cleanEmail
+        });
 
         if (existingUser) {
             return res.status(400).json({
@@ -26,10 +60,10 @@ router.post("/register", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
-            name,
-            email,
+            name: cleanName,
+            email: cleanEmail,
             password: hashedPassword,
-            phone: phone || "",
+            phone: cleanPhone,
             role: "customer",
             status: "active"
         });
@@ -63,7 +97,11 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        const user = await User.findOne({ email });
+        const cleanEmail = email.trim().toLowerCase();
+
+        const user = await User.findOne({
+            email: cleanEmail
+        });
 
         if (!user) {
             return res.status(401).json({
@@ -77,7 +115,10 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        const passwordMatch = await bcrypt.compare(password, user.password);
+        const passwordMatch = await bcrypt.compare(
+            password,
+            user.password
+        );
 
         if (!passwordMatch) {
             return res.status(401).json({

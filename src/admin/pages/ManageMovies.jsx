@@ -9,7 +9,77 @@ import {
     FaTimes,
 } from "react-icons/fa";
 
+import avatar from "../../assets/posters/avatar.jpg";
+import avengersEndgame from "../../assets/posters/avengers-endgame.jpg";
+import darkKnight from "../../assets/posters/dark-knight.jpg";
+import inception from "../../assets/posters/inception.jpg";
+import insidious from "../../assets/posters/insidious.jpg";
+import interstellar from "../../assets/posters/interstellar.jpg";
+import johnWick from "../../assets/posters/john-wick.jpg";
+import matrix from "../../assets/posters/matrix.jpg";
+import parasite from "../../assets/posters/parasite.jpg";
+import surongo from "../../assets/posters/surongo.jpg";
+import theParadise from "../../assets/posters/the-paradise.jpg";
+
 function ManageMovies() {
+    const posterOptions = [
+        {
+            name: "Avatar",
+            file: "avatar.jpg",
+            image: avatar,
+        },
+        {
+            name: "Avengers: Endgame",
+            file: "avengers-endgame.jpg",
+            image: avengersEndgame,
+        },
+        {
+            name: "The Dark Knight",
+            file: "dark-knight.jpg",
+            image: darkKnight,
+        },
+        {
+            name: "Inception",
+            file: "inception.jpg",
+            image: inception,
+        },
+        {
+            name: "Insidious: Out of the Further",
+            file: "insidious.jpg",
+            image: insidious,
+        },
+        {
+            name: "Interstellar",
+            file: "interstellar.jpg",
+            image: interstellar,
+        },
+        {
+            name: "John Wick",
+            file: "john-wick.jpg",
+            image: johnWick,
+        },
+        {
+            name: "The Matrix",
+            file: "matrix.jpg",
+            image: matrix,
+        },
+        {
+            name: "Parasite",
+            file: "parasite.jpg",
+            image: parasite,
+        },
+        {
+            name: "Surongo",
+            file: "surongo.jpg",
+            image: surongo,
+        },
+        {
+            name: "The Paradise",
+            file: "the-paradise.jpg",
+            image: theParadise,
+        },
+    ];
+
     const [movies, setMovies] = useState([]);
     const [genres, setGenres] = useState([]);
     const [showForm, setShowForm] = useState(false);
@@ -75,6 +145,18 @@ function ManageMovies() {
 
         loadData();
     }, []);
+
+    const getPoster = (fileName) => {
+        const poster =
+            posterOptions.find(
+                (poster) =>
+                    poster.file === fileName
+            );
+
+        return poster
+            ? poster.image
+            : "";
+    };
 
     const handleChange = (event) => {
         const {
@@ -189,6 +271,13 @@ function ManageMovies() {
             return false;
         }
 
+        if (!formData.image) {
+            alert(
+                "Please select a movie poster."
+            );
+            return false;
+        }
+
         if (!formData.description.trim()) {
             alert(
                 "Please enter movie description."
@@ -256,7 +345,7 @@ function ManageMovies() {
             releaseDate:
                 formData.releaseDate,
             image:
-                formData.image.trim(),
+                formData.image,
             description:
                 formData.description.trim(),
             status:
@@ -514,41 +603,15 @@ function ManageMovies() {
                             <table className="table">
                                 <thead>
                                     <tr>
-                                        <th>
-                                            ID
-                                        </th>
-
-                                        <th>
-                                            Movie
-                                        </th>
-
-                                        <th>
-                                            Genre
-                                        </th>
-
-                                        <th>
-                                            Language
-                                        </th>
-
-                                        <th>
-                                            Rating
-                                        </th>
-
-                                        <th>
-                                            Duration
-                                        </th>
-
-                                        <th>
-                                            Release Date
-                                        </th>
-
-                                        <th>
-                                            Status
-                                        </th>
-
-                                        <th>
-                                            Actions
-                                        </th>
+                                        <th>ID</th>
+                                        <th>Movie</th>
+                                        <th>Genre</th>
+                                        <th>Language</th>
+                                        <th>Rating</th>
+                                        <th>Duration</th>
+                                        <th>Release Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
 
@@ -571,18 +634,38 @@ function ManageMovies() {
                                                 </td>
 
                                                 <td>
-                                                    <div>
-                                                        <p className="font-bold">
-                                                            {
-                                                                movie.title
-                                                            }
-                                                        </p>
+                                                    <div className="flex items-center gap-3">
+                                                        {getPoster(
+                                                            movie.image
+                                                        ) ? (
+                                                            <img
+                                                                src={getPoster(
+                                                                    movie.image
+                                                                )}
+                                                                alt={
+                                                                    movie.title
+                                                                }
+                                                                className="w-12 h-16 object-cover rounded"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-12 h-16 bg-base-200 rounded flex items-center justify-center">
+                                                                <FaFilm className="text-base-content/30" />
+                                                            </div>
+                                                        )}
 
-                                                        <p className="text-xs text-base-content/60 max-w-xs">
-                                                            {
-                                                                movie.description
-                                                            }
-                                                        </p>
+                                                        <div>
+                                                            <p className="font-bold">
+                                                                {
+                                                                    movie.title
+                                                                }
+                                                            </p>
+
+                                                            <p className="text-xs text-base-content/60 max-w-xs">
+                                                                {
+                                                                    movie.description
+                                                                }
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </td>
 
@@ -882,12 +965,11 @@ function ManageMovies() {
                                 <div className="mt-4">
                                     <label className="label">
                                         <span className="label-text font-semibold">
-                                            Movie Poster URL
+                                            Movie Poster
                                         </span>
                                     </label>
 
-                                    <input
-                                        type="url"
+                                    <select
                                         name="image"
                                         value={
                                             formData.image
@@ -895,9 +977,58 @@ function ManageMovies() {
                                         onChange={
                                             handleChange
                                         }
-                                        placeholder="https://example.com/movie-poster.jpg"
-                                        className="input input-bordered w-full"
-                                    />
+                                        className="select select-bordered w-full"
+                                    >
+                                        <option value="">
+                                            Select Movie Poster
+                                        </option>
+
+                                        {posterOptions.map(
+                                            (
+                                                poster
+                                            ) => (
+                                                <option
+                                                    key={
+                                                        poster.file
+                                                    }
+                                                    value={
+                                                        poster.file
+                                                    }
+                                                >
+                                                    {
+                                                        poster.name
+                                                    }
+                                                </option>
+                                            )
+                                        )}
+                                    </select>
+
+                                    {formData.image &&
+                                        getPoster(
+                                            formData.image
+                                        ) && (
+                                            <div className="mt-4 flex items-center gap-4">
+                                                <img
+                                                    src={getPoster(
+                                                        formData.image
+                                                    )}
+                                                    alt="Selected movie poster"
+                                                    className="w-20 h-28 object-cover rounded-lg shadow"
+                                                />
+
+                                                <div>
+                                                    <p className="font-semibold">
+                                                        Selected Poster
+                                                    </p>
+
+                                                    <p className="text-sm text-base-content/60">
+                                                        {
+                                                            formData.image
+                                                        }
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
                                 </div>
 
                                 <div className="mt-4">

@@ -9,29 +9,25 @@ import {
     FaFilm,
     FaBuilding,
     FaCreditCard,
+    FaSearch,
 } from "react-icons/fa";
 
 const API_URL = "http://localhost:5000/api";
 
 function Reports() {
 
-    const [bookings, setBookings] =
-        useState([]);
+    const [bookings, setBookings] = useState([]);
+    const [movies, setMovies] = useState([]);
+    const [branches, setBranches] = useState([]);
+    const [schedules, setSchedules] = useState([]);
 
-    const [movies, setMovies] =
-        useState([]);
+    const [loading, setLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState("");
 
-    const [branches, setBranches] =
-        useState([]);
-
-    const [schedules, setSchedules] =
-        useState([]);
-
-    const [loading, setLoading] =
-        useState(true);
-
-    const [errorMessage, setErrorMessage] =
-        useState("");
+    const [selectedDate, setSelectedDate] = useState("");
+    const [selectedBranch, setSelectedBranch] = useState("");
+    const [selectedMovie, setSelectedMovie] = useState("");
+    const [reportSubmitted, setReportSubmitted] = useState(false);
 
     useEffect(() => {
 
@@ -48,18 +44,10 @@ function Reports() {
                     branchesResponse,
                     schedulesResponse,
                 ] = await Promise.all([
-                    fetch(
-                        `${API_URL}/bookings`
-                    ),
-                    fetch(
-                        `${API_URL}/movies`
-                    ),
-                    fetch(
-                        `${API_URL}/branches`
-                    ),
-                    fetch(
-                        `${API_URL}/schedules`
-                    ),
+                    fetch(`${API_URL}/bookings`),
+                    fetch(`${API_URL}/movies`),
+                    fetch(`${API_URL}/branches`),
+                    fetch(`${API_URL}/schedules`),
                 ]);
 
                 const [
@@ -155,158 +143,141 @@ function Reports() {
 
     }, []);
 
-    const getSchedule =
-        (booking) => {
+    const getSchedule = (booking) => {
 
-            if (!booking) {
-
-                return null;
-
-            }
-
-            return schedules.find(
-                (schedule) =>
-                    Number(
-                        schedule.scheduleID
-                    ) ===
-                    Number(
-                        booking.scheduleID
-                    )
-            ) || null;
-
-        };
-
-    const getBranch =
-        (booking) => {
-
-            if (!booking) {
-
-                return null;
-
-            }
-
-            if (
-                booking.branchID !==
-                    undefined &&
-                booking.branchID !==
-                    null &&
-                booking.branchID !==
-                    ""
-            ) {
-
-                const branchByID =
-                    branches.find(
-                        (branch) =>
-                            Number(
-                                branch.branchID
-                            ) ===
-                            Number(
-                                booking.branchID
-                            )
-                    );
-
-                if (branchByID) {
-
-                    return branchByID;
-
-                }
-
-            }
-
-            const schedule =
-                getSchedule(
-                    booking
-                );
-
-            if (
-                schedule?.branchID !==
-                    undefined &&
-                schedule?.branchID !==
-                    null
-            ) {
-
-                const branchByScheduleID =
-                    branches.find(
-                        (branch) =>
-                            Number(
-                                branch.branchID
-                            ) ===
-                            Number(
-                                schedule.branchID
-                            )
-                    );
-
-                if (
-                    branchByScheduleID
-                ) {
-
-                    return branchByScheduleID;
-
-                }
-
-            }
-
-            if (
-                booking.branchName
-            ) {
-
-                const branchByName =
-                    branches.find(
-                        (branch) =>
-                            branch.branchName ===
-                            booking.branchName
-                    );
-
-                if (
-                    branchByName
-                ) {
-
-                    return branchByName;
-
-                }
-
-            }
-
+        if (!booking) {
             return null;
+        }
 
-        };
+        return schedules.find(
+            (schedule) =>
+                Number(schedule.scheduleID) ===
+                Number(booking.scheduleID)
+        ) || null;
 
-    const getSelectedSeats =
-        (booking) => {
+    };
 
-            if (
-                Array.isArray(
-                    booking.selectedSeats
-                )
-            ) {
+    const getBranch = (booking) => {
 
-                return booking.selectedSeats;
+        if (!booking) {
+            return null;
+        }
 
+        if (
+            booking.branchID !== undefined &&
+            booking.branchID !== null &&
+            booking.branchID !== ""
+        ) {
+
+            const branchByID = branches.find(
+                (branch) =>
+                    Number(branch.branchID) ===
+                    Number(booking.branchID)
+            );
+
+            if (branchByID) {
+                return branchByID;
             }
 
-            if (
-                Array.isArray(
-                    booking.seats
-                )
-            ) {
+        }
 
-                return booking.seats;
+        const schedule = getSchedule(booking);
 
+        if (
+            schedule?.branchID !== undefined &&
+            schedule?.branchID !== null
+        ) {
+
+            const branchByScheduleID = branches.find(
+                (branch) =>
+                    Number(branch.branchID) ===
+                    Number(schedule.branchID)
+            );
+
+            if (branchByScheduleID) {
+                return branchByScheduleID;
             }
 
-            return [];
+        }
 
-        };
+        if (booking.branchName) {
+
+            const branchByName = branches.find(
+                (branch) =>
+                    branch.branchName ===
+                    booking.branchName
+            );
+
+            if (branchByName) {
+                return branchByName;
+            }
+
+        }
+
+        return null;
+
+    };
+
+    const getMovie = (booking) => {
+
+        if (!booking) {
+            return null;
+        }
+
+        const movieByID = movies.find(
+            (movie) =>
+                Number(movie.movieID) ===
+                Number(booking.movieID)
+        );
+
+        if (movieByID) {
+            return movieByID;
+        }
+
+        const schedule = getSchedule(booking);
+
+        if (
+            schedule?.movieID !== undefined &&
+            schedule?.movieID !== null
+        ) {
+
+            const movieByScheduleID = movies.find(
+                (movie) =>
+                    Number(movie.movieID) ===
+                    Number(schedule.movieID)
+            );
+
+            if (movieByScheduleID) {
+                return movieByScheduleID;
+            }
+
+        }
+
+        return null;
+
+    };
+
+    const getSelectedSeats = (booking) => {
+
+        if (Array.isArray(booking.selectedSeats)) {
+            return booking.selectedSeats;
+        }
+
+        if (Array.isArray(booking.seats)) {
+            return booking.seats;
+        }
+
+        return [];
+
+    };
 
     const confirmedBookingData =
         bookings.filter(
             (booking) =>
-                booking.status ===
-                "Confirmed"
+                booking.status === "Confirmed"
         );
 
-    const totalBookings =
-        bookings.length;
+    const totalBookings = bookings.length;
 
     const confirmedBookings =
         confirmedBookingData.length;
@@ -316,8 +287,7 @@ function Reports() {
             (total, booking) =>
                 total +
                 Number(
-                    booking.totalAmount ||
-                    0
+                    booking.totalAmount || 0
                 ),
             0
         );
@@ -326,9 +296,7 @@ function Reports() {
         confirmedBookingData.reduce(
             (total, booking) =>
                 total +
-                getSelectedSeats(
-                    booking
-                ).length,
+                getSelectedSeats(booking).length,
             0
         );
 
@@ -369,7 +337,6 @@ function Reports() {
                     );
 
                 return {
-
                     movieID:
                         movie.movieID,
 
@@ -384,7 +351,6 @@ function Reports() {
 
                     revenue:
                         movieRevenue,
-
                 };
 
             }
@@ -428,7 +394,6 @@ function Reports() {
                     );
 
                 return {
-
                     branchID:
                         branch.branchID,
 
@@ -440,7 +405,6 @@ function Reports() {
 
                     revenue:
                         branchRevenue,
-
                 };
 
             }
@@ -449,9 +413,7 @@ function Reports() {
     const unknownBranchBookings =
         confirmedBookingData.filter(
             (booking) =>
-                !getBranch(
-                    booking
-                )
+                !getBranch(booking)
         );
 
     const unknownBranchRevenue =
@@ -497,7 +459,6 @@ function Reports() {
                     );
 
                 return {
-
                     method:
                         method,
 
@@ -506,7 +467,6 @@ function Reports() {
 
                     revenue:
                         methodRevenue,
-
                 };
 
             }
@@ -527,6 +487,133 @@ function Reports() {
                     b.bookings -
                     a.bookings
             )[0];
+
+    const reportDates = [
+        ...new Set(
+            schedules
+                .map(
+                    (schedule) =>
+                        schedule.showDate
+                )
+                .filter(Boolean)
+        ),
+    ].sort();
+
+    const handleSubmitReport = () => {
+
+        if (
+            selectedDate &&
+            selectedBranch &&
+            selectedMovie
+        ) {
+
+            setReportSubmitted(true);
+
+        }
+
+    };
+
+    const filteredReportBookings =
+        reportSubmitted
+            ? bookings.filter(
+                (booking) => {
+
+                    const bookingDate =
+                        booking.showDate ||
+                        getSchedule(booking)?.showDate ||
+                        "";
+
+                    const bookingBranch =
+                        getBranch(booking);
+
+                    const bookingMovie =
+                        getMovie(booking);
+
+                    const branchMatches =
+                        bookingBranch &&
+                        Number(
+                            bookingBranch.branchID
+                        ) ===
+                        Number(
+                            selectedBranch
+                        );
+
+                    const movieMatches =
+                        bookingMovie &&
+                        Number(
+                            bookingMovie.movieID
+                        ) ===
+                        Number(
+                            selectedMovie
+                        );
+
+                    return (
+                        bookingDate ===
+                            selectedDate &&
+                        branchMatches &&
+                        movieMatches
+                    );
+
+                }
+            )
+            : [];
+
+    const filteredConfirmedBookings =
+        filteredReportBookings.filter(
+            (booking) =>
+                booking.status ===
+                "Confirmed"
+        );
+
+    const filteredCancelledBookings =
+        filteredReportBookings.filter(
+            (booking) =>
+                booking.status ===
+                "Cancelled"
+        );
+
+    const filteredSeats =
+        filteredConfirmedBookings.reduce(
+            (total, booking) =>
+                total +
+                getSelectedSeats(
+                    booking
+                ).length,
+            0
+        );
+
+    const filteredRevenue =
+        filteredConfirmedBookings.reduce(
+            (total, booking) =>
+                total +
+                Number(
+                    booking.totalAmount ||
+                    0
+                ),
+            0
+        );
+
+    const selectedBranchObject =
+        branches.find(
+            (branch) =>
+                Number(
+                    branch.branchID
+                ) ===
+                Number(
+                    selectedBranch
+                )
+        );
+
+    const selectedMovieObject =
+        movies.find(
+            (movie) =>
+                Number(
+                    movie.movieID
+                ) ===
+                Number(
+                    selectedMovie
+                )
+        );
 
     return (
 
@@ -731,12 +818,10 @@ function Reports() {
                                         </p>
 
                                         <h2 className="text-xl font-bold">
-
                                             {
                                                 mostPopularMovie?.title ||
                                                 "No data"
                                             }
-
                                         </h2>
 
                                     </div>
@@ -783,12 +868,10 @@ function Reports() {
                                         </p>
 
                                         <h2 className="text-xl font-bold">
-
                                             {
                                                 mostPopularBranch?.branchName ||
                                                 "No data"
                                             }
-
                                         </h2>
 
                                     </div>
@@ -819,6 +902,496 @@ function Reports() {
                     </div>
 
                 )}
+
+                <div className="card bg-base-100 shadow-md mb-8">
+
+                    <div className="card-body">
+
+                        <div className="flex items-center gap-3 mb-2">
+
+                            <FaSearch className="text-primary text-xl" />
+
+                            <h2 className="text-2xl font-bold">
+                                Booking Report
+                            </h2>
+
+                        </div>
+
+                        <p className="text-sm text-base-content/60">
+                            Select a date, cinema branch, and movie to view detailed booking information.
+                        </p>
+
+                        <div className="divider"></div>
+
+                        <div className="grid md:grid-cols-3 gap-5">
+
+                            <div>
+
+                                <label className="label">
+
+                                    <span className="label-text font-semibold">
+                                        Select Date
+                                    </span>
+
+                                </label>
+
+                                <select
+                                    value={selectedDate}
+                                    onChange={(event) => {
+                                        setSelectedDate(
+                                            event.target.value
+                                        );
+                                        setReportSubmitted(false);
+                                    }}
+                                    className="select select-bordered w-full"
+                                >
+
+                                    <option value="">
+                                        Select Date
+                                    </option>
+
+                                    {reportDates.map(
+                                        (date) => (
+
+                                            <option
+                                                key={date}
+                                                value={date}
+                                            >
+                                                {date}
+                                            </option>
+
+                                        )
+                                    )}
+
+                                </select>
+
+                            </div>
+
+                            <div>
+
+                                <label className="label">
+
+                                    <span className="label-text font-semibold">
+                                        Select Cinema Branch
+                                    </span>
+
+                                </label>
+
+                                <select
+                                    value={selectedBranch}
+                                    onChange={(event) => {
+                                        setSelectedBranch(
+                                            event.target.value
+                                        );
+                                        setReportSubmitted(false);
+                                    }}
+                                    className="select select-bordered w-full"
+                                >
+
+                                    <option value="">
+                                        Select Branch
+                                    </option>
+
+                                    {branches.map(
+                                        (branch) => (
+
+                                            <option
+                                                key={
+                                                    branch.branchID
+                                                }
+                                                value={
+                                                    branch.branchID
+                                                }
+                                            >
+                                                {
+                                                    branch.branchName
+                                                }
+                                            </option>
+
+                                        )
+                                    )}
+
+                                </select>
+
+                            </div>
+
+                            <div>
+
+                                <label className="label">
+
+                                    <span className="label-text font-semibold">
+                                        Select Movie
+                                    </span>
+
+                                </label>
+
+                                <select
+                                    value={selectedMovie}
+                                    onChange={(event) => {
+                                        setSelectedMovie(
+                                            event.target.value
+                                        );
+                                        setReportSubmitted(false);
+                                    }}
+                                    className="select select-bordered w-full"
+                                >
+
+                                    <option value="">
+                                        Select Movie
+                                    </option>
+
+                                    {movies.map(
+                                        (movie) => (
+
+                                            <option
+                                                key={
+                                                    movie.movieID
+                                                }
+                                                value={
+                                                    movie.movieID
+                                                }
+                                            >
+                                                {
+                                                    movie.title
+                                                }
+                                            </option>
+
+                                        )
+                                    )}
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                        <div className="flex justify-center mt-6">
+
+                            <button
+                                onClick={
+                                    handleSubmitReport
+                                }
+                                disabled={
+                                    !selectedDate ||
+                                    !selectedBranch ||
+                                    !selectedMovie
+                                }
+                                className="btn btn-primary px-10"
+                            >
+
+                                <FaSearch />
+
+                                Submit
+
+                            </button>
+
+                        </div>
+
+                        {reportSubmitted && (
+
+                            <div className="mt-8">
+
+                                <div className="bg-base-200 rounded-lg p-5 mb-6">
+
+                                    <h3 className="text-xl font-bold mb-4">
+                                        Selected Report
+                                    </h3>
+
+                                    <div className="grid md:grid-cols-3 gap-4">
+
+                                        <div>
+
+                                            <p className="text-sm text-base-content/60">
+                                                Date
+                                            </p>
+
+                                            <p className="font-semibold">
+                                                {
+                                                    selectedDate
+                                                }
+                                            </p>
+
+                                        </div>
+
+                                        <div>
+
+                                            <p className="text-sm text-base-content/60">
+                                                Cinema Branch
+                                            </p>
+
+                                            <p className="font-semibold">
+                                                {
+                                                    selectedBranchObject?.branchName ||
+                                                    "Unknown"
+                                                }
+                                            </p>
+
+                                        </div>
+
+                                        <div>
+
+                                            <p className="text-sm text-base-content/60">
+                                                Movie
+                                            </p>
+
+                                            <p className="font-semibold">
+                                                {
+                                                    selectedMovieObject?.title ||
+                                                    "Unknown"
+                                                }
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+
+                                    <div className="bg-base-200 rounded-lg p-4">
+
+                                        <p className="text-sm text-base-content/60">
+                                            Total Bookings
+                                        </p>
+
+                                        <p className="text-2xl font-bold mt-1">
+                                            {
+                                                filteredReportBookings.length
+                                            }
+                                        </p>
+
+                                    </div>
+
+                                    <div className="bg-base-200 rounded-lg p-4">
+
+                                        <p className="text-sm text-base-content/60">
+                                            Confirmed
+                                        </p>
+
+                                        <p className="text-2xl font-bold text-success mt-1">
+                                            {
+                                                filteredConfirmedBookings.length
+                                            }
+                                        </p>
+
+                                    </div>
+
+                                    <div className="bg-base-200 rounded-lg p-4">
+
+                                        <p className="text-sm text-base-content/60">
+                                            Cancelled
+                                        </p>
+
+                                        <p className="text-2xl font-bold text-error mt-1">
+                                            {
+                                                filteredCancelledBookings.length
+                                            }
+                                        </p>
+
+                                    </div>
+
+                                    <div className="bg-base-200 rounded-lg p-4">
+
+                                        <p className="text-sm text-base-content/60">
+                                            Seats Sold
+                                        </p>
+
+                                        <p className="text-2xl font-bold mt-1">
+                                            {
+                                                filteredSeats
+                                            }
+                                        </p>
+
+                                    </div>
+
+                                    <div className="bg-base-200 rounded-lg p-4">
+
+                                        <p className="text-sm text-base-content/60">
+                                            Revenue
+                                        </p>
+
+                                        <p className="text-2xl font-bold text-primary mt-1">
+                                            ৳
+                                            {
+                                                filteredRevenue
+                                            }
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                                <div className="overflow-x-auto">
+
+                                    {filteredReportBookings.length >
+                                        0 ? (
+
+                                        <table className="table">
+
+                                            <thead>
+
+                                                <tr>
+
+                                                    <th>
+                                                        Customer
+                                                    </th>
+
+                                                    <th>
+                                                        Showtime
+                                                    </th>
+
+                                                    <th>
+                                                        Seats
+                                                    </th>
+
+                                                    <th>
+                                                        Amount
+                                                    </th>
+
+                                                    <th>
+                                                        Payment
+                                                    </th>
+
+                                                    <th>
+                                                        Status
+                                                    </th>
+
+                                                </tr>
+
+                                            </thead>
+
+                                            <tbody>
+
+                                                {filteredReportBookings.map(
+                                                    (
+                                                        booking,
+                                                        index
+                                                    ) => {
+
+                                                        const schedule =
+                                                            getSchedule(
+                                                                booking
+                                                            );
+
+                                                        const seats =
+                                                            getSelectedSeats(
+                                                                booking
+                                                            );
+
+                                                        return (
+
+                                                            <tr
+                                                                key={
+                                                                    booking._id ||
+                                                                    booking.bookingID ||
+                                                                    index
+                                                                }
+                                                            >
+
+                                                                <td>
+
+                                                                    <div className="font-semibold">
+                                                                        {
+                                                                            booking.customerName ||
+                                                                            "Unknown Customer"
+                                                                        }
+                                                                    </div>
+
+                                                                    <div className="text-xs text-base-content/60">
+                                                                        {
+                                                                            booking.customerEmail ||
+                                                                            ""
+                                                                        }
+                                                                    </div>
+
+                                                                </td>
+
+                                                                <td>
+                                                                    {
+                                                                        schedule?.startTime ||
+                                                                        booking.startTime ||
+                                                                        "N/A"
+                                                                    }
+                                                                </td>
+
+                                                                <td>
+                                                                    {
+                                                                        seats.length
+                                                                    }
+                                                                </td>
+
+                                                                <td className="font-semibold">
+                                                                    ৳
+                                                                    {
+                                                                        booking.totalAmount ||
+                                                                        0
+                                                                    }
+                                                                </td>
+
+                                                                <td className="capitalize">
+                                                                    {
+                                                                        booking.paymentMethod ||
+                                                                        "N/A"
+                                                                    }
+                                                                </td>
+
+                                                                <td>
+
+                                                                    <span
+                                                                        className={
+                                                                            booking.status ===
+                                                                            "Confirmed"
+                                                                                ? "badge badge-success"
+                                                                                : "badge badge-error"
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            booking.status ||
+                                                                            "Unknown"
+                                                                        }
+                                                                    </span>
+
+                                                                </td>
+
+                                                            </tr>
+
+                                                        );
+
+                                                    }
+                                                )}
+
+                                            </tbody>
+
+                                        </table>
+
+                                    ) : (
+
+                                        <div className="text-center py-10 bg-base-200 rounded-lg">
+
+                                            <FaChartBar className="text-4xl mx-auto text-base-content/30" />
+
+                                            <h3 className="text-lg font-bold mt-3">
+                                                No Booking Data Found
+                                            </h3>
+
+                                            <p className="text-sm text-base-content/60 mt-1">
+                                                No bookings were found for the selected date, cinema branch, and movie.
+                                            </p>
+
+                                        </div>
+
+                                    )}
+
+                                </div>
+
+                            </div>
+
+                        )}
+
+                    </div>
+
+                </div>
 
                 <div className="card bg-base-100 shadow-md mb-8">
 
@@ -882,7 +1455,9 @@ function Reports() {
                                                 colSpan="5"
                                                 className="text-center py-8"
                                             >
+
                                                 <span className="loading loading-spinner loading-md"></span>
+
                                             </td>
 
                                         </tr>
@@ -1013,7 +1588,9 @@ function Reports() {
                                                 colSpan="3"
                                                 className="text-center py-8"
                                             >
+
                                                 <span className="loading loading-spinner loading-md"></span>
+
                                             </td>
 
                                         </tr>
