@@ -104,45 +104,57 @@ function Booking() {
                     ]);
 
                     if (!moviesResponse.ok) {
+
                         throw new Error(
                             moviesData.message ||
                             "Failed to fetch movies"
                         );
+
                     }
 
                     if (!branchesResponse.ok) {
+
                         throw new Error(
                             branchesData.message ||
                             "Failed to fetch branches"
                         );
+
                     }
 
                     if (!screensResponse.ok) {
+
                         throw new Error(
                             screensData.message ||
                             "Failed to fetch screens"
                         );
+
                     }
 
                     if (!schedulesResponse.ok) {
+
                         throw new Error(
                             schedulesData.message ||
                             "Failed to fetch schedules"
                         );
+
                     }
 
                     if (!seatsResponse.ok) {
+
                         throw new Error(
                             seatsData.message ||
                             "Failed to fetch seats"
                         );
+
                     }
 
                     if (!ticketPricesResponse.ok) {
+
                         throw new Error(
                             ticketPricesData.message ||
                             "Failed to fetch ticket prices"
                         );
+
                     }
 
                     setMovies(
@@ -219,9 +231,32 @@ function Booking() {
 
                 try {
 
+                    const currentSchedule =
+                        schedules.find(
+                            (item) =>
+                                Number(
+                                    item.scheduleID
+                                ) ===
+                                    scheduleID &&
+                                Number(
+                                    item.movieID
+                                ) ===
+                                    Number(movieID)
+                        );
+
+                    if (
+                        !currentSchedule?.showDate
+                    ) {
+
+                        setOccupiedSeats([]);
+
+                        return;
+
+                    }
+
                     const response =
                         await fetch(
-                            `${API_URL}/bookings/schedule/${scheduleID}/occupied-seats`
+                            `${API_URL}/bookings/schedule/${scheduleID}/occupied-seats?showDate=${encodeURIComponent(currentSchedule.showDate)}`
                         );
 
                     const data =
@@ -261,6 +296,8 @@ function Booking() {
 
     }, [
         scheduleID,
+        movieID,
+        schedules,
     ]);
 
     const movie =
@@ -455,6 +492,13 @@ function Booking() {
 
     const toggleSeat =
         (seatNumber) => {
+            
+            if (!selectedSeats.includes(seatNumber)&&
+        selectedSeats.length>=5)
+        {
+            alert("You can select a maximum of 5 seats.");
+            return;
+        }
 
             if (
                 isPastSchedule(
@@ -677,7 +721,7 @@ function Booking() {
                     ticketPricesResponse,
                 ] = await Promise.all([
                     fetch(
-                        `${API_URL}/bookings/schedule/${scheduleID}/occupied-seats`
+                        `${API_URL}/bookings/schedule/${scheduleID}/occupied-seats?showDate=${encodeURIComponent(schedule?.showDate || "")}`
                     ),
                     fetch(
                         `${API_URL}/seats`
@@ -840,7 +884,6 @@ function Booking() {
     if (loading) {
 
         return (
-
             <div className="min-h-screen bg-base-200 flex items-center justify-center">
 
                 <div className="text-center">
@@ -854,7 +897,6 @@ function Booking() {
                 </div>
 
             </div>
-
         );
 
     }
@@ -862,7 +904,6 @@ function Booking() {
     if (errorMessage) {
 
         return (
-
             <div className="min-h-screen bg-base-200 flex items-center justify-center">
 
                 <div className="text-center">
@@ -888,7 +929,6 @@ function Booking() {
                 </div>
 
             </div>
-
         );
 
     }
@@ -899,7 +939,6 @@ function Booking() {
     ) {
 
         return (
-
             <div className="min-h-screen bg-base-200 flex items-center justify-center">
 
                 <div className="text-center">
@@ -922,7 +961,6 @@ function Booking() {
                 </div>
 
             </div>
-
         );
 
     }
@@ -935,7 +973,6 @@ function Booking() {
     ) {
 
         return (
-
             <div className="min-h-screen bg-base-200 py-10">
 
                 <div className="w-[90%] max-w-6xl mx-auto">
@@ -944,11 +981,8 @@ function Booking() {
                         to={`/movies/${movie.movieID}`}
                         className="btn btn-ghost mb-6"
                     >
-
                         <FaArrowLeft />
-
                         Back to Showtimes
-
                     </Link>
 
                     <div className="card bg-base-100 shadow-md">
@@ -985,7 +1019,6 @@ function Booking() {
                 </div>
 
             </div>
-
         );
 
     }
@@ -996,7 +1029,6 @@ function Booking() {
     ) {
 
         return (
-
             <div className="min-h-screen bg-base-200 py-10">
 
                 <div className="w-[90%] max-w-6xl mx-auto">
@@ -1005,11 +1037,8 @@ function Booking() {
                         to={`/movies/${movie.movieID}`}
                         className="btn btn-ghost mb-6"
                     >
-
                         <FaArrowLeft />
-
                         Back to Showtimes
-
                     </Link>
 
                     <div className="card bg-base-100 shadow-md">
@@ -1038,7 +1067,6 @@ function Booking() {
                 </div>
 
             </div>
-
         );
 
     }
@@ -1053,11 +1081,8 @@ function Booking() {
                     to={`/movies/${movie.movieID}`}
                     className="btn btn-ghost mb-6"
                 >
-
                     <FaArrowLeft />
-
                     Back to Showtimes
-
                 </Link>
 
                 <div className="text-center mb-10">
@@ -1369,9 +1394,7 @@ function Booking() {
                                     <p className="text-sm">
 
                                         {selectedSeats.length > 0
-
                                             ? `You selected ${selectedSeats.length} seat${selectedSeats.length > 1 ? "s" : ""}. We will recommend ${selectedSeats.length} suitable seat${selectedSeats.length > 1 ? "s" : ""}.`
-
                                             : "Select seats first, or let us recommend 2 suitable center seats."
                                         }
 
@@ -1390,9 +1413,11 @@ function Booking() {
                                     {recommendationMessage && (
 
                                         <p className="text-sm font-semibold mt-2">
+
                                             {
                                                 recommendationMessage
                                             }
+
                                         </p>
 
                                     )}

@@ -5,10 +5,7 @@ import {
     FaCalendarAlt,
     FaFilm,
 } from "react-icons/fa";
-
-import johnWick from "../assets/posters/john-wick.jpg";
-import theParadise from "../assets/posters/the-paradise.jpg";
-import insidious from "../assets/posters/insidious.jpg";
+import { getPoster } from "../utils/posterImages";
 
 function UpcomingMovies() {
 
@@ -20,16 +17,6 @@ function UpcomingMovies() {
 
     const [loadError, setLoadError] =
         useState("");
-
-    const posterImages = {
-        "john-wick.jpg": johnWick,
-        "the-paradise.jpg": theParadise,
-        "insidious.jpg": insidious,
-    };
-
-    const getPoster = (imageName) => {
-        return posterImages[imageName] || "";
-    };
 
     useEffect(() => {
 

@@ -20,8 +20,30 @@ import matrix from "../../assets/posters/matrix.jpg";
 import parasite from "../../assets/posters/parasite.jpg";
 import surongo from "../../assets/posters/surongo.jpg";
 import theParadise from "../../assets/posters/the-paradise.jpg";
+import mirzapur from "../../assets/posters/mirzapur.jpg";
+import mhn from "../../assets/posters/mhn.jpg";
+import hello from "../../assets/posters/hello.jpg";
 
 function ManageMovies() {
+    const [movies, setMovies] = useState([]);
+    const [genres, setGenres] = useState([]);
+    const [showForm, setShowForm] = useState(false);
+    const [editingMovie, setEditingMovie] = useState(null);
+    const [deleteMovie, setDeleteMovie] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const [formData, setFormData] = useState({
+        title: "",
+        genreID: "",
+        language: "",
+        rating: "",
+        duration: "",
+        releaseDate: "",
+        image: "",
+        description: "",
+        status: "active",
+    });
+
     const posterOptions = [
         {
             name: "Avatar",
@@ -44,7 +66,7 @@ function ManageMovies() {
             image: inception,
         },
         {
-            name: "Insidious: Out of the Further",
+            name: "Insidious",
             file: "insidious.jpg",
             image: insidious,
         },
@@ -78,26 +100,23 @@ function ManageMovies() {
             file: "the-paradise.jpg",
             image: theParadise,
         },
+        {
+            name: "Mirzapur",
+            file: "mirzapur.jpg",
+            image: mirzapur,
+        },
+        {
+            name: "Main Hoon Na",
+            file: "mhn.jpg",
+            image: mhn,
+        },
+         {
+            name: "Hello",
+            file: "hello.jpg",
+            image: hello,
+        },
     ];
 
-    const [movies, setMovies] = useState([]);
-    const [genres, setGenres] = useState([]);
-    const [showForm, setShowForm] = useState(false);
-    const [editingMovie, setEditingMovie] = useState(null);
-    const [deleteMovie, setDeleteMovie] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    const [formData, setFormData] = useState({
-        title: "",
-        genreID: "",
-        language: "",
-        rating: "",
-        duration: "",
-        releaseDate: "",
-        image: "",
-        description: "",
-        status: "active",
-    });
 
     useEffect(() => {
         const loadData = async () => {
@@ -131,8 +150,17 @@ function ManageMovies() {
                 const genreData =
                     await genreResponse.json();
 
-                setMovies(movieData);
-                setGenres(genreData);
+                setMovies(
+                    Array.isArray(movieData)
+                        ? movieData
+                        : []
+                );
+
+                setGenres(
+                    Array.isArray(genreData)
+                        ? genreData
+                        : []
+                );
             } catch (error) {
                 console.error(
                     "Failed to load movie data:",
@@ -145,18 +173,6 @@ function ManageMovies() {
 
         loadData();
     }, []);
-
-    const getPoster = (fileName) => {
-        const poster =
-            posterOptions.find(
-                (poster) =>
-                    poster.file === fileName
-            );
-
-        return poster
-            ? poster.image
-            : "";
-    };
 
     const handleChange = (event) => {
         const {
@@ -197,17 +213,22 @@ function ManageMovies() {
         setEditingMovie(movie);
 
         setFormData({
-            title: movie.title || "",
+            title:
+                movie.title || "",
             genreID:
                 movie.genreID !== undefined
-                    ? String(movie.genreID)
+                    ? String(
+                          movie.genreID
+                      )
                     : "",
             language:
                 movie.language || "",
             rating:
                 movie.rating !== undefined &&
                 movie.rating !== null
-                    ? String(movie.rating)
+                    ? String(
+                          movie.rating
+                      )
                     : "",
             duration:
                 movie.duration || "",
@@ -225,9 +246,41 @@ function ManageMovies() {
     };
 
     const validateMovie = () => {
-        if (!formData.title.trim()) {
+        const title =
+            formData.title.trim();
+
+        const language =
+            formData.language.trim();
+
+        const duration =
+            formData.duration.trim();
+
+        const ratingValue =
+            Number(formData.rating);
+
+        if (!title) {
             alert(
                 "Please enter movie title."
+            );
+            return false;
+        }
+
+        if (
+            /^\d+$/.test(title)
+        ) {
+            alert(
+                "Movie title cannot contain only numbers."
+            );
+            return false;
+        }
+
+        if (
+            !/^[A-Za-z0-9\u0980-\u09FF][A-Za-z0-9\u0980-\u09FF\s:,'!?.&()\-]*$/.test(
+                title
+            )
+        ) {
+            alert(
+                "Please enter a valid movie title."
             );
             return false;
         }
@@ -239,7 +292,7 @@ function ManageMovies() {
             return false;
         }
 
-        if (!formData.language.trim()) {
+        if (!language) {
             alert(
                 "Please enter movie language."
             );
@@ -247,9 +300,26 @@ function ManageMovies() {
         }
 
         if (
+            !/^[A-Za-z\u0980-\u09FF]+(?:[\s-][A-Za-z\u0980-\u09FF]+)*$/.test(
+                language
+            )
+        ) {
+            alert(
+                "Please enter a valid movie language."
+            );
+            return false;
+        }
+
+        if (
             formData.rating === "" ||
-            Number(formData.rating) < 0 ||
-            Number(formData.rating) > 10
+            !Number.isFinite(
+                ratingValue
+            ) ||
+            ratingValue < 0 ||
+            ratingValue > 10 ||
+            !/^(?:\d|10)(?:\.\d)?$/.test(
+                formData.rating
+            )
         ) {
             alert(
                 "Please enter a valid movie rating between 0 and 10."
@@ -257,9 +327,20 @@ function ManageMovies() {
             return false;
         }
 
-        if (!formData.duration.trim()) {
+        if (!duration) {
             alert(
                 "Please enter movie duration."
+            );
+            return false;
+        }
+
+        if (
+            !/^\d+h(?:\s\d+m)?$/.test(
+                duration
+            )
+        ) {
+            alert(
+                "Duration must be in a format such as 2h 16m or 3h 2m."
             );
             return false;
         }
@@ -271,7 +352,7 @@ function ManageMovies() {
             return false;
         }
 
-        if (!formData.image) {
+        if (!formData.image.trim()) {
             alert(
                 "Please select a movie poster."
             );
@@ -288,7 +369,9 @@ function ManageMovies() {
         return true;
     };
 
-    const handleSubmit = async (event) => {
+    const handleSubmit = async (
+        event
+    ) => {
         event.preventDefault();
 
         if (!validateMovie()) {
@@ -345,7 +428,7 @@ function ManageMovies() {
             releaseDate:
                 formData.releaseDate,
             image:
-                formData.image,
+                formData.image.trim(),
             description:
                 formData.description.trim(),
             status:
@@ -462,67 +545,77 @@ function ManageMovies() {
         });
     };
 
-    const handleDeleteClick = (movie) => {
+    const handleDeleteClick = (
+        movie
+    ) => {
         setDeleteMovie(movie);
     };
 
-    const handleConfirmDelete = async () => {
-        if (!deleteMovie) {
-            return;
-        }
+    const handleConfirmDelete =
+        async () => {
+            if (!deleteMovie) {
+                return;
+            }
 
-        try {
-            const response =
-                await fetch(
-                    `http://localhost:5000/api/movies/${deleteMovie.movieID}`,
-                    {
-                        method: "DELETE",
-                    }
+            try {
+                const response =
+                    await fetch(
+                        `http://localhost:5000/api/movies/${deleteMovie.movieID}`,
+                        {
+                            method: "DELETE",
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.message ||
+                            "Movie deletion failed."
+                    );
+                }
+
+                setMovies(
+                    movies.filter(
+                        (movie) =>
+                            Number(
+                                movie.movieID
+                            ) !==
+                            Number(
+                                deleteMovie.movieID
+                            )
+                    )
                 );
 
-            const data =
-                await response.json();
+                alert(
+                    "Movie deleted successfully."
+                );
 
-            if (!response.ok) {
-                throw new Error(
-                    data.message ||
+                setDeleteMovie(null);
+            } catch (error) {
+                console.error(
+                    "Movie deletion failed:",
+                    error
+                );
+
+                alert(
+                    error.message ||
                         "Movie deletion failed."
                 );
             }
-
-            setMovies(
-                movies.filter(
-                    (movie) =>
-                        Number(
-                            movie.movieID
-                        ) !==
-                        Number(
-                            deleteMovie.movieID
-                        )
-                )
-            );
-
-            alert(
-                "Movie deleted successfully."
-            );
-
-            setDeleteMovie(null);
-        } catch (error) {
-            console.error(
-                "Movie deletion failed:",
-                error
-            );
-
-            alert(
-                error.message ||
-                    "Movie deletion failed."
-            );
-        }
-    };
+        };
 
     const handleCancelDelete = () => {
         setDeleteMovie(null);
     };
+
+    const selectedPoster =
+        posterOptions.find(
+            (poster) =>
+                poster.file ===
+                formData.image
+        );
 
     if (loading) {
         return (
@@ -551,7 +644,7 @@ function ManageMovies() {
                             Back to Dashboard
                         </Link>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                                 <FaFilm className="text-primary text-xl" />
                             </div>
@@ -619,136 +712,147 @@ function ManageMovies() {
                                     {movies.map(
                                         (
                                             movie
-                                        ) => (
-                                            <tr
-                                                key={
-                                                    movie.movieID
-                                                }
-                                            >
-                                                <td>
-                                                    <span className="font-semibold">
+                                        ) => {
+                                            const poster =
+                                                posterOptions.find(
+                                                    (
+                                                        item
+                                                    ) =>
+                                                        item.file ===
+                                                        movie.image
+                                                );
+
+                                            return (
+                                                <tr
+                                                    key={
+                                                        movie.movieID
+                                                    }
+                                                >
+                                                    <td>
                                                         {
                                                             movie.movieID
                                                         }
-                                                    </span>
-                                                </td>
+                                                    </td>
 
-                                                <td>
-                                                    <div className="flex items-center gap-3">
-                                                        {getPoster(
-                                                            movie.image
-                                                        ) ? (
-                                                            <img
-                                                                src={getPoster(
-                                                                    movie.image
+                                                    <td>
+                                                        <div className="flex items-center gap-3 min-w-[240px]">
+                                                            <div className="w-12 h-16 rounded overflow-hidden bg-base-300 shrink-0">
+                                                                {poster ? (
+                                                                    <img
+                                                                        src={
+                                                                            poster.image
+                                                                        }
+                                                                        alt={
+                                                                            movie.title
+                                                                        }
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center">
+                                                                        <FaFilm className="text-base-content/30" />
+                                                                    </div>
                                                                 )}
-                                                                alt={
-                                                                    movie.title
-                                                                }
-                                                                className="w-12 h-16 object-cover rounded"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-12 h-16 bg-base-200 rounded flex items-center justify-center">
-                                                                <FaFilm className="text-base-content/30" />
                                                             </div>
-                                                        )}
 
-                                                        <div>
-                                                            <p className="font-bold">
-                                                                {
-                                                                    movie.title
-                                                                }
-                                                            </p>
+                                                            <div>
+                                                                <p className="font-bold">
+                                                                    {
+                                                                        movie.title
+                                                                    }
+                                                                </p>
 
-                                                            <p className="text-xs text-base-content/60 max-w-xs">
-                                                                {
-                                                                    movie.description
-                                                                }
-                                                            </p>
+                                                                <p className="text-xs text-base-content/60 max-w-xs truncate">
+                                                                    {
+                                                                        movie.description
+                                                                    }
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </td>
+                                                    </td>
 
-                                                <td>
-                                                    <span className="badge badge-primary badge-outline">
+                                                    <td>
                                                         {
                                                             movie.genreName
                                                         }
-                                                    </span>
-                                                </td>
+                                                    </td>
 
-                                                <td>
-                                                    {
-                                                        movie.language
-                                                    }
-                                                </td>
+                                                    <td>
+                                                        {
+                                                            movie.language
+                                                        }
+                                                    </td>
 
-                                                <td>
-                                                    ⭐{" "}
-                                                    {movie.rating ??
-                                                        "N/A"}
-                                                </td>
+                                                    <td>
+                                                        {
+                                                            movie.rating
+                                                        }
+                                                    </td>
 
-                                                <td>
-                                                    {
-                                                        movie.duration
-                                                    }
-                                                </td>
+                                                    <td>
+                                                        {
+                                                            movie.duration
+                                                        }
+                                                    </td>
 
-                                                <td>
-                                                    {
-                                                        movie.releaseDate ||
-                                                        "N/A"
-                                                    }
-                                                </td>
+                                                    <td>
+                                                        {
+                                                            movie.releaseDate
+                                                        }
+                                                    </td>
 
-                                                <td>
-                                                    <span
-                                                        className={`badge ${
-                                                            movie.status ===
-                                                            "active"
-                                                                ? "badge-success"
-                                                                : "badge-error"
-                                                        }`}
-                                                    >
-                                                        {movie.status ===
-                                                        "active"
-                                                            ? "Active"
-                                                            : "Inactive"}
-                                                    </span>
-                                                </td>
-
-                                                <td>
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleEditMovie(
-                                                                    movie
-                                                                )
+                                                    <td>
+                                                        <span
+                                                            className={
+                                                                movie.status ===
+                                                                    "active" ||
+                                                                movie.status ===
+                                                                    "Active"
+                                                                    ? "badge badge-success"
+                                                                    : "badge badge-error"
                                                             }
-                                                            className="btn btn-sm btn-outline btn-primary"
                                                         >
-                                                            <FaEdit />
-                                                            Edit
-                                                        </button>
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleDeleteClick(
-                                                                    movie
-                                                                )
+                                                            {
+                                                                movie.status ===
+                                                                    "active" ||
+                                                                movie.status ===
+                                                                    "Active"
+                                                                    ? "Active"
+                                                                    : "Inactive"
                                                             }
-                                                            className="btn btn-sm btn-outline btn-error"
-                                                        >
-                                                            <FaTrash />
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )
+                                                        </span>
+                                                    </td>
+
+                                                    <td>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleEditMovie(
+                                                                        movie
+                                                                    )
+                                                                }
+                                                                className="btn btn-sm btn-outline btn-primary"
+                                                            >
+                                                                <FaEdit />
+                                                                Edit
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleDeleteClick(
+                                                                        movie
+                                                                    )
+                                                                }
+                                                                className="btn btn-sm btn-outline btn-error"
+                                                            >
+                                                                <FaTrash />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
                                     )}
                                 </tbody>
                             </table>
@@ -830,8 +934,8 @@ function ManageMovies() {
                                     />
                                 </div>
 
-                                <div className="grid md:grid-cols-2 gap-4 mt-4">
-                                    <div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="mt-4">
                                         <label className="label">
                                             <span className="label-text font-semibold">
                                                 Genre
@@ -873,7 +977,7 @@ function ManageMovies() {
                                         </select>
                                     </div>
 
-                                    <div>
+                                    <div className="mt-4">
                                         <label className="label">
                                             <span className="label-text font-semibold">
                                                 Language
@@ -895,8 +999,8 @@ function ManageMovies() {
                                     </div>
                                 </div>
 
-                                <div className="grid md:grid-cols-2 gap-4 mt-4">
-                                    <div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="mt-4">
                                         <label className="label">
                                             <span className="label-text font-semibold">
                                                 Rating
@@ -912,15 +1016,15 @@ function ManageMovies() {
                                             onChange={
                                                 handleChange
                                             }
-                                            placeholder="e.g. 8.8"
                                             min="0"
                                             max="10"
                                             step="0.1"
+                                            placeholder="0 - 10"
                                             className="input input-bordered w-full"
                                         />
                                     </div>
 
-                                    <div>
+                                    <div className="mt-4">
                                         <label className="label">
                                             <span className="label-text font-semibold">
                                                 Duration
@@ -936,7 +1040,7 @@ function ManageMovies() {
                                             onChange={
                                                 handleChange
                                             }
-                                            placeholder="e.g. 2h 28m"
+                                            placeholder="e.g. 2h 16m"
                                             className="input input-bordered w-full"
                                         />
                                     </div>
@@ -1003,32 +1107,31 @@ function ManageMovies() {
                                         )}
                                     </select>
 
-                                    {formData.image &&
-                                        getPoster(
-                                            formData.image
-                                        ) && (
-                                            <div className="mt-4 flex items-center gap-4">
-                                                <img
-                                                    src={getPoster(
-                                                        formData.image
-                                                    )}
-                                                    alt="Selected movie poster"
-                                                    className="w-20 h-28 object-cover rounded-lg shadow"
-                                                />
+                                    {selectedPoster && (
+                                        <div className="mt-3 flex items-center gap-4">
+                                            <img
+                                                src={
+                                                    selectedPoster.image
+                                                }
+                                                alt={
+                                                    selectedPoster.name
+                                                }
+                                                className="w-16 h-24 object-cover rounded"
+                                            />
 
-                                                <div>
-                                                    <p className="font-semibold">
-                                                        Selected Poster
-                                                    </p>
+                                            <div>
+                                                <p className="font-semibold">
+                                                    Selected Poster
+                                                </p>
 
-                                                    <p className="text-sm text-base-content/60">
-                                                        {
-                                                            formData.image
-                                                        }
-                                                    </p>
-                                                </div>
+                                                <p className="text-sm text-base-content/60">
+                                                    {
+                                                        selectedPoster.file
+                                                    }
+                                                </p>
                                             </div>
-                                        )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="mt-4">
@@ -1095,7 +1198,7 @@ function ManageMovies() {
                                     >
                                         {editingMovie
                                             ? "Save Changes"
-                                            : "Save Movie"}
+                                            : "Add Movie"}
                                     </button>
                                 </div>
                             </form>

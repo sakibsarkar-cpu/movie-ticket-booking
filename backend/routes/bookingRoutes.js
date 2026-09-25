@@ -55,23 +55,39 @@ router.get("/customer/:customerID", async (req, res) => {
 
 router.get("/schedule/:scheduleID/occupied-seats", async (req, res) => {
     try {
-        const bookings = await Booking.find({
-            scheduleID: Number(req.params.scheduleID),
+        const scheduleID = Number(req.params.scheduleID);
+        const showDate = req.query.showDate;
+
+        const query = {
+            scheduleID,
             status: "Confirmed",
             paymentStatus: "Paid"
-        }).select("selectedSeats");
+        };
+
+        if (showDate) {
+            query.showDate = showDate;
+        }
+
+        const bookings = await Booking.find(query).select(
+            "selectedSeats"
+        );
 
         const occupiedSeats = [];
 
         bookings.forEach((booking) => {
             if (Array.isArray(booking.selectedSeats)) {
-                occupiedSeats.push(...booking.selectedSeats);
+                occupiedSeats.push(
+                    ...booking.selectedSeats
+                );
             }
         });
 
         res.json({
-            scheduleID: Number(req.params.scheduleID),
-            occupiedSeats: [...new Set(occupiedSeats)]
+            scheduleID,
+            showDate: showDate || null,
+            occupiedSeats: [
+                ...new Set(occupiedSeats)
+            ]
         });
     } catch (error) {
         res.status(500).json({

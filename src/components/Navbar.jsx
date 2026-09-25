@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getPoster } from "../utils/posterImages";
 
 function Navbar() {
     const navigate = useNavigate();
@@ -195,9 +196,9 @@ function Navbar() {
 
                                                 {movie.image && (
                                                     <img
-                                                        src={
+                                                        src={getPoster(
                                                             movie.image
-                                                        }
+                                                        )}
                                                         alt={
                                                             movie.title
                                                         }

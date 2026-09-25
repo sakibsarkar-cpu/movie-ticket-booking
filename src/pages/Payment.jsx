@@ -20,150 +20,71 @@ import {
 const API_URL = "http://localhost:5000/api";
 
 function Payment() {
-
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
-    const [searchParams] =
-        useSearchParams();
+    const movieID = Number(searchParams.get("movie"));
+    const scheduleID = Number(searchParams.get("schedule"));
 
-    const movieID =
-        Number(searchParams.get("movie"));
+    const selectedSeats = (searchParams.get("seats") || "")
+        .split(",")
+        .map((seat) => seat.trim())
+        .filter(Boolean);
 
-    const scheduleID =
-        Number(searchParams.get("schedule"));
+    const [movie, setMovie] = useState(null);
+    const [movies, setMovies] = useState([]);
+    const [branches, setBranches] = useState([]);
+    const [screens, setScreens] = useState([]);
+    const [schedule, setSchedule] = useState(null);
+    const [ticketPrices, setTicketPrices] = useState([]);
+    const [promotions, setPromotions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState("");
 
-    const selectedSeats =
-        (searchParams.get("seats") || "")
-            .split(",")
-            .map((seat) => seat.trim())
-            .filter(Boolean);
+    const [promotionCode, setPromotionCode] = useState("");
+    const [showPromotionSuggestions, setShowPromotionSuggestions] = useState(false);
+    const [appliedPromotion, setAppliedPromotion] = useState(null);
+    const [discountAmount, setDiscountAmount] = useState(0);
+    const [promotionMessage, setPromotionMessage] = useState("");
 
-    const [movie, setMovie] =
-        useState(null);
+    const [paymentMethod, setPaymentMethod] = useState("card");
+    const [mobileBankingProvider, setMobileBankingProvider] = useState("bkash");
+    const [mobileBankingNumber, setMobileBankingNumber] = useState("");
 
-    const [branches, setBranches] =
-        useState([]);
+    const [paymentSuccess, setPaymentSuccess] = useState(false);
+    const [paymentFailed, setPaymentFailed] = useState(false);
+    const [simulateFailure, setSimulateFailure] = useState(false);
+    const [transactionID, setTransactionID] = useState("");
 
-    const [screens, setScreens] =
-        useState([]);
-
-    const [schedule, setSchedule] =
-        useState(null);
-
-    const [ticketPrices, setTicketPrices] =
-        useState([]);
-
-    const [promotions, setPromotions] =
-        useState([]);
-
-    const [loading, setLoading] =
-        useState(true);
-
-    const [loadError, setLoadError] =
-        useState("");
-
-    const [promotionCode, setPromotionCode] =
-        useState("");
-
-    const [
-        showPromotionSuggestions,
-        setShowPromotionSuggestions,
-    ] = useState(false);
-
-    const [
-        appliedPromotion,
-        setAppliedPromotion,
-    ] = useState(null);
-
-    const [
-        discountAmount,
-        setDiscountAmount,
-    ] = useState(0);
-
-    const [
-        promotionMessage,
-        setPromotionMessage,
-    ] = useState("");
-
-    const [
-        paymentMethod,
-        setPaymentMethod,
-    ] = useState("card");
-
-    const [
-        mobileBankingProvider,
-        setMobileBankingProvider,
-    ] = useState("bkash");
-
-    const [
-        mobileBankingNumber,
-        setMobileBankingNumber,
-    ] = useState("");
-
-    const [
-        paymentSuccess,
-        setPaymentSuccess,
-    ] = useState(false);
-
-    const [
-        paymentFailed,
-        setPaymentFailed,
-    ] = useState(false);
-
-    const [
-        simulateFailure,
-        setSimulateFailure,
-    ] = useState(false);
-
-    const [
-        transactionID,
-        setTransactionID,
-    ] = useState("");
-
-    const [
-        isConfirmingBooking,
-        setIsConfirmingBooking,
-    ] = useState(false);
+    const [isConfirmingBooking, setIsConfirmingBooking] = useState(false);
 
     useEffect(() => {
-
         const loadData = async () => {
-
             try {
-
                 setLoading(true);
                 setLoadError("");
 
                 const [
                     movieResponse,
+                    moviesResponse,
                     branchResponse,
                     screenResponse,
                     scheduleResponse,
                     ticketPriceResponse,
                     promotionResponse,
                 ] = await Promise.all([
-                    fetch(
-                        `${API_URL}/movies/${movieID}`
-                    ),
-                    fetch(
-                        `${API_URL}/branches`
-                    ),
-                    fetch(
-                        `${API_URL}/screens`
-                    ),
-                    fetch(
-                        `${API_URL}/schedules`
-                    ),
-                    fetch(
-                        `${API_URL}/ticket-prices`
-                    ),
-                    fetch(
-                        `${API_URL}/promotions`
-                    ),
+                    fetch(`${API_URL}/movies/${movieID}`),
+                    fetch(`${API_URL}/movies`),
+                    fetch(`${API_URL}/branches`),
+                    fetch(`${API_URL}/screens`),
+                    fetch(`${API_URL}/schedules`),
+                    fetch(`${API_URL}/ticket-prices`),
+                    fetch(`${API_URL}/promotions`),
                 ]);
 
                 const [
                     movieData,
+                    moviesData,
                     branchData,
                     screenData,
                     scheduleData,
@@ -171,6 +92,7 @@ function Payment() {
                     promotionData,
                 ] = await Promise.all([
                     movieResponse.json(),
+                    moviesResponse.json(),
                     branchResponse.json(),
                     screenResponse.json(),
                     scheduleResponse.json(),
@@ -180,8 +102,13 @@ function Payment() {
 
                 if (!movieResponse.ok) {
                     throw new Error(
-                        movieData.message ||
-                        "Movie not found."
+                        movieData.message || "Movie not found."
+                    );
+                }
+
+                if (!moviesResponse.ok) {
+                    throw new Error(
+                        moviesData.message || "Failed to load movies."
                     );
                 }
 
@@ -220,27 +147,24 @@ function Payment() {
                     );
                 }
 
-                const selectedSchedule =
-                    Array.isArray(scheduleData)
-                        ? scheduleData.find(
-                            (item) =>
-                                Number(
-                                    item.scheduleID
-                                ) ===
-                                    scheduleID &&
-                                Number(
-                                    item.movieID
-                                ) ===
-                                    movieID
-                        )
-                        : null;
+                const selectedSchedule = Array.isArray(scheduleData)
+                    ? scheduleData.find(
+                        (item) =>
+                            Number(item.scheduleID) === scheduleID &&
+                            Number(item.movieID) === movieID
+                    )
+                    : null;
 
                 setMovie({
                     ...movieData,
-                    genre:
-                        movieData.genreName ||
-                        "",
+                    genre: movieData.genreName || "",
                 });
+
+                setMovies(
+                    Array.isArray(moviesData)
+                        ? moviesData
+                        : []
+                );
 
                 setBranches(
                     Array.isArray(branchData)
@@ -254,48 +178,26 @@ function Payment() {
                         : []
                 );
 
-                setSchedule(
-                    selectedSchedule
-                );
+                setSchedule(selectedSchedule);
 
                 setTicketPrices(
-                    Array.isArray(
-                        ticketPriceData
-                    )
-                        ? ticketPriceData.map(
-                            (price) => ({
-                                ...price,
-                                movieID:
-                                    Number(
-                                        price.movieID
-                                    ),
-                                branchID:
-                                    Number(
-                                        price.branchID
-                                    ),
-                                screenID:
-                                    Number(
-                                        price.screenID
-                                    ),
-                                price:
-                                    Number(
-                                        price.price
-                                    ),
-                            })
-                        )
+                    Array.isArray(ticketPriceData)
+                        ? ticketPriceData.map((price) => ({
+                            ...price,
+                            movieID: Number(price.movieID),
+                            branchID: Number(price.branchID),
+                            screenID: Number(price.screenID),
+                            price: Number(price.price),
+                        }))
                         : []
                 );
 
                 setPromotions(
-                    Array.isArray(
-                        promotionData
-                    )
+                    Array.isArray(promotionData)
                         ? promotionData
                         : []
                 );
-
             } catch (error) {
-
                 console.error(
                     "Failed to load payment data:",
                     error
@@ -305,46 +207,27 @@ function Payment() {
                     error.message ||
                     "Failed to load payment information."
                 );
-
             } finally {
-
                 setLoading(false);
-
             }
-
         };
 
         loadData();
-
     }, [movieID, scheduleID]);
 
-    const branch =
-        branches.find(
-            (item) =>
-                Number(
-                    item.branchID
-                ) ===
-                Number(
-                    schedule?.branchID
-                )
-        );
+    const branch = branches.find(
+        (item) =>
+            Number(item.branchID) ===
+            Number(schedule?.branchID)
+    );
 
-    const screen =
-        screens.find(
-            (item) =>
-                Number(
-                    item.screenID
-                ) ===
-                    Number(
-                        schedule?.screenID
-                    ) &&
-                Number(
-                    item.branchID
-                ) ===
-                    Number(
-                        schedule?.branchID
-                    )
-        );
+    const screen = screens.find(
+        (item) =>
+            Number(item.screenID) ===
+                Number(schedule?.screenID) &&
+            Number(item.branchID) ===
+                Number(schedule?.branchID)
+    );
 
     const screenName =
         schedule?.screenName ||
@@ -354,141 +237,161 @@ function Payment() {
     const currentTicketPrice =
         ticketPrices.find(
             (price) =>
-                Number(
-                    price.movieID
-                ) ===
-                    Number(movieID) &&
-                Number(
-                    price.branchID
-                ) ===
-                    Number(
-                        schedule?.branchID
-                    ) &&
-                Number(
-                    price.screenID
-                ) ===
-                    Number(
-                        schedule?.screenID
-                    ) &&
-                price.status !==
-                    "Inactive"
+                Number(price.movieID) === Number(movieID) &&
+                Number(price.branchID) ===
+                    Number(schedule?.branchID) &&
+                Number(price.screenID) ===
+                    Number(schedule?.screenID) &&
+                price.status !== "Inactive"
         )?.price || 0;
 
     const subtotal =
         selectedSeats.length *
-        Number(
-            currentTicketPrice
+        Number(currentTicketPrice);
+
+    const availablePromotions = promotions.filter(
+        (promotion) =>
+            promotion.status === "Active"
+    );
+
+    const getDayName = (dateString) => {
+        if (!dateString) {
+            return "";
+        }
+
+        const date = new Date(
+            `${dateString}T00:00:00`
         );
 
-    const availablePromotions =
-        promotions.filter(
-            (promotion) =>
-                promotion.status ===
-                "Active"
+        return date.toLocaleDateString(
+            "en-US",
+            {
+                weekday: "long",
+            }
         );
+    };
 
-    const getDayName =
-        (dateString) => {
+    const isPromotionValidForBooking = (promotion) => {
+        if (
+            !promotion ||
+            promotion.status !== "Active"
+        ) {
+            return false;
+        }
 
-            if (!dateString) {
-                return "";
-            }
+        const showDate = schedule?.showDate;
 
-            const date =
-                new Date(
-                    `${dateString}T00:00:00`
-                );
+        if (!showDate) {
+            return false;
+        }
 
-            return date.toLocaleDateString(
-                "en-US",
-                {
-                    weekday:
-                        "long",
-                }
-            );
+        if (
+            showDate < promotion.startDate ||
+            showDate > promotion.endDate
+        ) {
+            return false;
+        }
 
-        };
+        const applicableDay =
+            promotion.applicableDay ||
+            "All Days";
 
-    const isPromotionValidForBooking =
-        (promotion) => {
+        if (applicableDay === "All Days") {
+            return true;
+        }
 
-            if (
-                !promotion ||
-                promotion.status !==
-                    "Active"
-            ) {
-                return false;
-            }
+        const showDay = getDayName(showDate);
 
-            const showDate =
-                schedule?.showDate;
-
-            if (!showDate) {
-                return false;
-            }
-
-            if (
-                showDate <
-                    promotion.startDate ||
-                showDate >
-                    promotion.endDate
-            ) {
-                return false;
-            }
-
-            const applicableDay =
-                promotion.applicableDay ||
-                "All Days";
-
-            if (
-                applicableDay ===
-                "All Days"
-            ) {
-                return true;
-            }
-
-            const showDay =
-                getDayName(
-                    showDate
-                );
-
-            if (
-                applicableDay ===
-                "Saturday & Sunday"
-            ) {
-                return (
-                    showDay ===
-                        "Saturday" ||
-                    showDay ===
-                        "Sunday"
-                );
-            }
-
+        if (
+            applicableDay ===
+            "Saturday & Sunday"
+        ) {
             return (
-                applicableDay ===
-                showDay
+                showDay === "Saturday" ||
+                showDay === "Sunday"
+            );
+        }
+
+        return applicableDay === showDay;
+    };
+
+    const isPromotionValidForMovie = (promotion) => {
+        if (!promotion) {
+            return false;
+        }
+
+        const movieScope =
+            promotion.movieScope ||
+            "all";
+
+        if (movieScope === "all") {
+            return true;
+        }
+
+        const applicableMovieIDs =
+            Array.isArray(
+                promotion.applicableMovieIDs
+            )
+                ? promotion.applicableMovieIDs
+                : [];
+
+        return applicableMovieIDs.some(
+            (id) =>
+                Number(id) === Number(movieID)
+        );
+    };
+
+    const handleApplyPromotion = () => {
+        const code = promotionCode
+            .trim()
+            .toUpperCase();
+
+        if (!code) {
+            setPromotionMessage(
+                "Please select or enter a promotion code."
             );
 
-        };
+            setAppliedPromotion(null);
+            setDiscountAmount(0);
 
-    const isPromotionValidForMovie =
-        (promotion) => {
+            return;
+        }
 
-            if (!promotion) {
-                return false;
-            }
+        const promotion = promotions.find(
+            (item) =>
+                item.promotionCode === code
+        );
 
-            const movieScope =
-                promotion.movieScope ||
-                "all";
+        if (!promotion) {
+            setPromotionMessage(
+                "Invalid promotion code."
+            );
 
-            if (
-                movieScope ===
-                "all"
-            ) {
-                return true;
-            }
+            setAppliedPromotion(null);
+            setDiscountAmount(0);
 
+            return;
+        }
+
+        if (
+            promotion.status !==
+            "Active"
+        ) {
+            setPromotionMessage(
+                "This promotion is currently inactive."
+            );
+
+            setAppliedPromotion(null);
+            setDiscountAmount(0);
+
+            return;
+        }
+
+        if (
+            !isPromotionValidForMovie(
+                promotion
+            )
+        ) {
             const applicableMovieIDs =
                 Array.isArray(
                     promotion.applicableMovieIDs
@@ -496,207 +399,101 @@ function Payment() {
                     ? promotion.applicableMovieIDs
                     : [];
 
-            return applicableMovieIDs.some(
-                (id) =>
-                    Number(id) ===
-                    Number(movieID)
-            );
-
-        };
-
-    const handleApplyPromotion =
-        () => {
-
-            const code =
-                promotionCode
-                    .trim()
-                    .toUpperCase();
-
-            if (!code) {
-
-                setPromotionMessage(
-                    "Please select or enter a promotion code."
-                );
-
-                setAppliedPromotion(
-                    null
-                );
-
-                setDiscountAmount(0);
-
-                return;
-
-            }
-
-            const promotion =
-                promotions.find(
-                    (item) =>
-                        item.promotionCode ===
-                        code
-                );
-
-            if (!promotion) {
-
-                setPromotionMessage(
-                    "Invalid promotion code."
-                );
-
-                setAppliedPromotion(
-                    null
-                );
-
-                setDiscountAmount(0);
-
-                return;
-
-            }
-
-            if (
-                promotion.status !==
-                "Active"
-            ) {
-
-                setPromotionMessage(
-                    "This promotion is currently inactive."
-                );
-
-                setAppliedPromotion(
-                    null
-                );
-
-                setDiscountAmount(0);
-
-                return;
-
-            }
-
-            if (
-                !isPromotionValidForMovie(
-                    promotion
-                )
-            ) {
-
-                const applicableMovieIDs =
-                    Array.isArray(
-                        promotion.applicableMovieIDs
-                    )
-                        ? promotion.applicableMovieIDs
-                        : [];
-
-                const applicableMovieNames =
-                    applicableMovieIDs
-                        .map((id) => {
-
-                            const applicableMovie =
-                                movieID ===
+            const applicableMovieNames =
+                applicableMovieIDs
+                    .map((id) => {
+                        const applicableMovie =
+                            movies.find(
+                                (item) =>
+                                    Number(item.movieID) ===
                                     Number(id)
-                                    ? movie
-                                    : null;
+                            );
 
-                            return applicableMovie
-                                ? applicableMovie.title
-                                : null;
+                        return applicableMovie
+                            ? applicableMovie.title
+                            : null;
+                    })
+                    .filter(Boolean);
 
-                        })
-                        .filter(Boolean);
-
-                const movieText =
-                    applicableMovieNames.length >
-                    0
-                        ? applicableMovieNames.join(
-                            ", "
-                        )
-                        : "selected movies";
-
-                setPromotionMessage(
-                    `This promotion is only valid for ${movieText}.`
-                );
-
-                setAppliedPromotion(
-                    null
-                );
-
-                setDiscountAmount(0);
-
-                return;
-
-            }
-
-            if (
-                !isPromotionValidForBooking(
-                    promotion
-                )
-            ) {
-
-                const showDate =
-                    schedule?.showDate;
-
-                if (
-                    showDate <
-                        promotion.startDate ||
-                    showDate >
-                        promotion.endDate
-                ) {
-
-                    setPromotionMessage(
-                        `This promotion is valid from ${promotion.startDate} to ${promotion.endDate}.`
-                    );
-
-                } else {
-
-                    setPromotionMessage(
-                        `This promotion is only valid for ${promotion.applicableDay || "All Days"} bookings.`
-                    );
-
-                }
-
-                setAppliedPromotion(
-                    null
-                );
-
-                setDiscountAmount(0);
-
-                return;
-
-            }
-
-            const discount =
-                Math.round(
-                    subtotal *
-                        Number(
-                            promotion.discountPercentage
-                        ) /
-                        100
-                );
-
-            setAppliedPromotion(
-                promotion
-            );
-
-            setDiscountAmount(
-                discount
-            );
+            const movieText =
+                applicableMovieNames.length > 0
+                    ? applicableMovieNames.join(", ")
+                    : "selected movies";
 
             setPromotionMessage(
-                `${promotion.promotionCode} applied successfully.`
+                `This promotion is only valid for ${movieText}.`
             );
 
-            setShowPromotionSuggestions(
-                false
+            setAppliedPromotion(null);
+            setDiscountAmount(0);
+
+            return;
+        }
+
+        if (
+            !isPromotionValidForBooking(
+                promotion
+            )
+        ) {
+            const showDate =
+                schedule?.showDate;
+
+            if (
+                showDate <
+                    promotion.startDate ||
+                showDate >
+                    promotion.endDate
+            ) {
+                setPromotionMessage(
+                    `This promotion is valid from ${promotion.startDate} to ${promotion.endDate}.`
+                );
+            } else {
+                setPromotionMessage(
+                    `This promotion is only valid for ${promotion.applicableDay || "All Days"} bookings.`
+                );
+            }
+
+            setAppliedPromotion(null);
+            setDiscountAmount(0);
+
+            return;
+        }
+
+        const discount =
+            Math.round(
+                subtotal *
+                Number(
+                    promotion.discountPercentage
+                ) /
+                100
             );
 
-        };
+        setAppliedPromotion(
+            promotion
+        );
+
+        setDiscountAmount(
+            discount
+        );
+
+        setPromotionMessage(
+            `${promotion.promotionCode} applied successfully.`
+        );
+
+        setShowPromotionSuggestions(
+            false
+        );
+    };
 
     const finalAmount =
         Math.max(
             0,
             subtotal -
-                discountAmount
+            discountAmount
         );
 
     const handleSelectPromotion =
         (promotion) => {
-
             setPromotionCode(
                 promotion.promotionCode
             );
@@ -706,15 +503,13 @@ function Payment() {
             );
 
             setPromotionMessage("");
-
         };
 
     const getOccupiedSeats =
         async () => {
-
             const response =
                 await fetch(
-                    `${API_URL}/bookings/schedule/${scheduleID}/occupied-seats`
+                    `${API_URL}/bookings/schedule/${scheduleID}/occupied-seats?showDate=${encodeURIComponent(schedule?.showDate || "")}`
                 );
 
             const data =
@@ -732,19 +527,15 @@ function Payment() {
             )
                 ? data.occupiedSeats
                 : [];
-
         };
 
     const handlePayment =
         async (event) => {
-
             event.preventDefault();
 
             if (
-                selectedSeats.length ===
-                0
+                selectedSeats.length === 0
             ) {
-
                 alert(
                     "No seats were selected. Please return to seat selection."
                 );
@@ -754,26 +545,22 @@ function Payment() {
                 );
 
                 return;
-
             }
 
             if (
                 currentTicketPrice <= 0
             ) {
-
                 alert(
                     "Ticket price could not be found for this show."
                 );
 
                 return;
-
             }
 
             if (
                 paymentMethod ===
                 "mobile banking"
             ) {
-
                 const cleanMobileNumber =
                     mobileBankingNumber.trim();
 
@@ -785,19 +572,15 @@ function Payment() {
                         cleanMobileNumber
                     )
                 ) {
-
                     alert(
                         "Please enter a valid 11-digit Bangladesh mobile banking number."
                     );
 
                     return;
-
                 }
-
             }
 
             try {
-
                 const occupiedSeats =
                     await getOccupiedSeats();
 
@@ -812,7 +595,6 @@ function Payment() {
                 if (
                     seatAlreadyBooked
                 ) {
-
                     alert(
                         "One or more selected seats have already been booked. Please return to seat selection."
                     );
@@ -822,7 +604,6 @@ function Payment() {
                     );
 
                     return;
-
                 }
 
                 const newTransactionID =
@@ -836,13 +617,11 @@ function Payment() {
                 if (
                     simulateFailure
                 ) {
-
                     setPaymentFailed(
                         true
                     );
 
                     return;
-
                 }
 
                 setPaymentFailed(
@@ -852,9 +631,7 @@ function Payment() {
                 setPaymentSuccess(
                     true
                 );
-
             } catch (error) {
-
                 console.error(
                     "Payment validation failed:",
                     error
@@ -864,33 +641,19 @@ function Payment() {
                     error.message ||
                     "Unable to verify seat availability."
                 );
-
             }
-
         };
 
     const handleRetryPayment =
         () => {
-
-            setPaymentFailed(
-                false
-            );
-
-            setPaymentSuccess(
-                false
-            );
-
-            setSimulateFailure(
-                false
-            );
-
+            setPaymentFailed(false);
+            setPaymentSuccess(false);
+            setSimulateFailure(false);
             setTransactionID("");
-
         };
 
     const handleConfirmBooking =
         async () => {
-
             if (
                 isConfirmingBooking
             ) {
@@ -905,24 +668,19 @@ function Payment() {
                 ) || {};
 
             if (!customer.userID) {
-
                 alert(
                     "Customer information was not found. Please log in again."
                 );
 
-                navigate(
-                    "/login"
-                );
+                navigate("/login");
 
                 return;
-
             }
 
             if (
                 selectedSeats.length ===
                 0
             ) {
-
                 alert(
                     "No seats were selected. Please return to seat selection."
                 );
@@ -932,23 +690,19 @@ function Payment() {
                 );
 
                 return;
-
             }
 
             if (
                 currentTicketPrice <= 0
             ) {
-
                 alert(
                     "Ticket price could not be found for this show."
                 );
 
                 return;
-
             }
 
             try {
-
                 const occupiedSeats =
                     await getOccupiedSeats();
 
@@ -963,7 +717,6 @@ function Payment() {
                 if (
                     seatAlreadyBooked
                 ) {
-
                     alert(
                         "One or more selected seats are already booked. This booking cannot be confirmed."
                     );
@@ -973,7 +726,6 @@ function Payment() {
                     );
 
                     return;
-
                 }
 
                 setIsConfirmingBooking(
@@ -1104,12 +856,10 @@ function Payment() {
                 if (
                     !bookingResponse.ok
                 ) {
-
                     throw new Error(
                         bookingData.message ||
                         "Booking creation failed"
                     );
-
                 }
 
                 const mongoBookingID =
@@ -1164,12 +914,10 @@ function Payment() {
                 if (
                     !paymentResponse.ok
                 ) {
-
                     throw new Error(
                         paymentResult.message ||
                         "Payment record creation failed"
                     );
-
                 }
 
                 const ticketID =
@@ -1291,20 +1039,16 @@ function Payment() {
                 if (
                     !ticketResponse.ok
                 ) {
-
                     throw new Error(
                         ticketResult.message ||
                         "Ticket generation failed"
                     );
-
                 }
 
                 navigate(
                     `/ticket?booking=${mongoBookingID}`
                 );
-
             } catch (error) {
-
                 console.error(
                     "Booking confirmation failed:",
                     error
@@ -1314,36 +1058,25 @@ function Payment() {
                     error.message ||
                     "Something went wrong while confirming your booking."
                 );
-
             } finally {
-
                 setIsConfirmingBooking(
                     false
                 );
-
             }
-
         };
 
     if (loading) {
-
         return (
             <div className="min-h-screen bg-base-200 flex items-center justify-center p-6">
-
                 <div className="text-center">
-
                     <span className="loading loading-spinner loading-lg text-primary"></span>
 
                     <p className="mt-4 text-base-content/60">
                         Loading payment information...
                     </p>
-
                 </div>
-
             </div>
-
         );
-
     }
 
     if (
@@ -1351,12 +1084,9 @@ function Payment() {
         !movie ||
         !schedule
     ) {
-
         return (
             <div className="min-h-screen bg-base-200 flex items-center justify-center">
-
                 <div className="text-center">
-
                     <h1 className="text-3xl font-bold">
                         Payment Information Not Found
                     </h1>
@@ -1372,23 +1102,16 @@ function Payment() {
                     >
                         Back to Movies
                     </Link>
-
                 </div>
-
             </div>
         );
-
     }
 
     if (paymentFailed) {
-
         return (
             <div className="min-h-screen bg-base-200 flex items-center justify-center p-6">
-
                 <div className="card bg-base-100 shadow-xl w-full max-w-lg">
-
                     <div className="card-body text-center">
-
                         <FaExclamationTriangle
                             className="text-error text-6xl mx-auto"
                         />
@@ -1405,9 +1128,7 @@ function Payment() {
                         <div className="divider"></div>
 
                         <div className="alert alert-error text-left">
-
                             <div>
-
                                 <h3 className="font-bold">
                                     Payment Error
                                 </h3>
@@ -1417,13 +1138,10 @@ function Payment() {
                                     No booking has been confirmed
                                     and no ticket has been generated.
                                 </p>
-
                             </div>
-
                         </div>
 
                         <div className="flex flex-col gap-3 mt-6">
-
                             <button
                                 type="button"
                                 onClick={
@@ -1446,27 +1164,18 @@ function Payment() {
                             >
                                 Return to Seat Selection
                             </button>
-
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
         );
-
     }
 
     if (paymentSuccess) {
-
         return (
             <div className="min-h-screen bg-base-200 flex items-center justify-center p-6">
-
                 <div className="card bg-base-100 shadow-xl w-full max-w-lg">
-
                     <div className="card-body text-center">
-
                         <FaCheckCircle
                             className="text-success text-6xl mx-auto"
                         />
@@ -1482,7 +1191,6 @@ function Payment() {
                         <div className="divider"></div>
 
                         <div className="text-left space-y-4">
-
                             <div className="flex justify-between">
                                 <span>
                                     Movie
@@ -1567,7 +1275,6 @@ function Payment() {
 
                             {appliedPromotion && (
                                 <div className="flex justify-between text-success">
-
                                     <span>
                                         Discount (
                                         {
@@ -1578,12 +1285,10 @@ function Payment() {
                                     <span className="font-semibold">
                                         -৳{discountAmount}
                                     </span>
-
                                 </div>
                             )}
 
                             <div className="flex justify-between">
-
                                 <span>
                                     Payment Method
                                 </span>
@@ -1594,11 +1299,9 @@ function Payment() {
                                         ? `${mobileBankingProvider} Mobile Banking`
                                         : paymentMethod}
                                 </span>
-
                             </div>
 
                             <div className="flex justify-between gap-4">
-
                                 <span>
                                     Transaction ID
                                 </span>
@@ -1606,11 +1309,9 @@ function Payment() {
                                 <span className="font-semibold text-right break-all">
                                     {transactionID}
                                 </span>
-
                             </div>
 
                             <div className="flex justify-between text-xl font-bold">
-
                                 <span>
                                     Total Paid
                                 </span>
@@ -1618,17 +1319,13 @@ function Payment() {
                                 <span className="text-primary">
                                     ৳{finalAmount}
                                 </span>
-
                             </div>
-
                         </div>
 
                         <div className="divider"></div>
 
                         <div className="alert alert-info text-left">
-
                             <div>
-
                                 <h3 className="font-bold">
                                     Confirm Your Booking
                                 </h3>
@@ -1638,9 +1335,7 @@ function Payment() {
                                     Confirm the booking to generate
                                     your movie ticket.
                                 </p>
-
                             </div>
-
                         </div>
 
                         <button
@@ -1669,34 +1364,25 @@ function Payment() {
                         >
                             Return to Booking
                         </button>
-
                     </div>
-
                 </div>
-
             </div>
         );
-
     }
 
     return (
         <div className="min-h-screen bg-base-200 py-10">
-
             <div className="w-[90%] max-w-5xl mx-auto">
 
                 <Link
                     to={`/booking/${movieID}?schedule=${scheduleID}`}
                     className="btn btn-ghost mb-6"
                 >
-
                     <FaArrowLeft />
-
                     Back to Seat Selection
-
                 </Link>
 
                 <div className="text-center mb-10">
-
                     <p className="text-primary font-semibold">
                         SECURE PAYMENT
                     </p>
@@ -1708,13 +1394,11 @@ function Payment() {
                     <p className="text-base-content/60 mt-3">
                         Confirm your booking and select a payment method.
                     </p>
-
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-8">
 
                     <div className="card bg-base-100 shadow-md h-fit">
-
                         <div className="card-body">
 
                             <h2 className="text-2xl font-bold">
@@ -1724,7 +1408,6 @@ function Payment() {
                             <div className="divider"></div>
 
                             <div>
-
                                 <p className="text-sm text-base-content/60">
                                     Movie
                                 </p>
@@ -1732,11 +1415,9 @@ function Payment() {
                                 <p className="font-semibold text-lg">
                                     {movie.title}
                                 </p>
-
                             </div>
 
                             <div className="mt-5">
-
                                 <p className="text-sm text-base-content/60">
                                     Cinema
                                 </p>
@@ -1744,11 +1425,9 @@ function Payment() {
                                 <p className="font-semibold">
                                     {branch?.branchName}
                                 </p>
-
                             </div>
 
                             <div className="mt-5">
-
                                 <p className="text-sm text-base-content/60">
                                     Location
                                 </p>
@@ -1756,11 +1435,9 @@ function Payment() {
                                 <p className="font-semibold">
                                     {branch?.location}
                                 </p>
-
                             </div>
 
                             <div className="mt-5">
-
                                 <p className="text-sm text-base-content/60">
                                     Screen
                                 </p>
@@ -1768,11 +1445,9 @@ function Payment() {
                                 <p className="font-semibold">
                                     {screenName}
                                 </p>
-
                             </div>
 
                             <div className="mt-5">
-
                                 <p className="text-sm text-base-content/60">
                                     Showtime
                                 </p>
@@ -1782,38 +1457,30 @@ function Payment() {
                                     {" • "}
                                     {schedule.startTime}
                                 </p>
-
                             </div>
 
                             <div className="mt-5">
-
                                 <p className="text-sm text-base-content/60">
                                     Selected Seats
                                 </p>
 
                                 <div className="flex flex-wrap gap-2 mt-2">
-
                                     {selectedSeats.map(
                                         (seat) => (
-
                                             <span
                                                 key={seat}
                                                 className="badge badge-primary"
                                             >
                                                 {seat}
                                             </span>
-
                                         )
                                     )}
-
                                 </div>
-
                             </div>
 
                             <div className="divider"></div>
 
                             <div className="flex justify-between">
-
                                 <span>
                                     Ticket Price
                                 </span>
@@ -1821,11 +1488,9 @@ function Payment() {
                                 <span>
                                     ৳{currentTicketPrice}
                                 </span>
-
                             </div>
 
                             <div className="flex justify-between mt-3">
-
                                 <span>
                                     Number of Seats
                                 </span>
@@ -1833,11 +1498,9 @@ function Payment() {
                                 <span>
                                     {selectedSeats.length}
                                 </span>
-
                             </div>
 
                             <div className="flex justify-between mt-3">
-
                                 <span>
                                     Subtotal
                                 </span>
@@ -1845,12 +1508,10 @@ function Payment() {
                                 <span>
                                     ৳{subtotal}
                                 </span>
-
                             </div>
 
                             {appliedPromotion && (
                                 <div className="flex justify-between mt-3 text-success">
-
                                     <span>
                                         Discount (
                                         {
@@ -1861,12 +1522,10 @@ function Payment() {
                                     <span>
                                         -৳{discountAmount}
                                     </span>
-
                                 </div>
                             )}
 
                             <div className="flex justify-between text-xl font-bold mt-5">
-
                                 <span>
                                     Total Amount
                                 </span>
@@ -1874,15 +1533,12 @@ function Payment() {
                                 <span className="text-primary">
                                     ৳{finalAmount}
                                 </span>
-
                             </div>
 
                         </div>
-
                     </div>
 
                     <div className="card bg-base-100 shadow-md">
-
                         <div className="card-body">
 
                             <h2 className="text-2xl font-bold">
@@ -1892,11 +1548,9 @@ function Payment() {
                             <div className="mt-5 relative">
 
                                 <label className="label">
-
                                     <span className="label-text">
                                         Promotion Code
                                     </span>
-
                                 </label>
 
                                 <div className="flex gap-2">
@@ -1939,97 +1593,93 @@ function Payment() {
                                 </div>
 
                                 {showPromotionSuggestions &&
-                                    availablePromotions.length >
-                                        0 && (
+                                    availablePromotions.length > 0 && (
 
-                                        <div className="absolute left-0 right-0 mt-2 bg-base-100 border border-base-300 rounded-lg shadow-xl z-50">
+                                    <div className="absolute left-0 right-0 mt-2 bg-base-100 border border-base-300 rounded-lg shadow-xl z-50">
 
-                                            <div className="p-3 border-b border-base-300">
+                                        <div className="p-3 border-b border-base-300">
 
-                                                <p className="font-semibold">
-                                                    Available Promotions
-                                                </p>
+                                            <p className="font-semibold">
+                                                Available Promotions
+                                            </p>
 
-                                                <p className="text-xs text-base-content/60 mt-1">
-                                                    Select a promotion code
-                                                </p>
-
-                                            </div>
-
-                                            {availablePromotions.map(
-                                                (
-                                                    promotion
-                                                ) => (
-
-                                                    <button
-                                                        key={
-                                                            promotion.promotionID
-                                                        }
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleSelectPromotion(
-                                                                promotion
-                                                            )
-                                                        }
-                                                        className="w-full text-left px-4 py-3 hover:bg-base-200 transition border-b border-base-300 last:border-b-0"
-                                                    >
-
-                                                        <div className="flex justify-between items-center">
-
-                                                            <span className="badge badge-primary font-semibold">
-                                                                {
-                                                                    promotion.promotionCode
-                                                                }
-                                                            </span>
-
-                                                            <span className="font-bold text-primary">
-                                                                {
-                                                                    promotion.discountPercentage
-                                                                }%
-                                                            </span>
-
-                                                        </div>
-
-                                                        <p className="text-sm mt-2">
-                                                            {
-                                                                promotion.description
-                                                            }
-                                                        </p>
-
-                                                        <p className="text-xs text-base-content/60 mt-1">
-
-                                                            {
-                                                                promotion.movieScope ===
-                                                                "selected"
-                                                                    ? "Selected Movies"
-                                                                    : "All Movies"
-                                                            }
-
-                                                            {" • "}
-
-                                                            {
-                                                                promotion.applicableDay ||
-                                                                "All Days"
-                                                            }
-
-                                                            {" • "}
-
-                                                            Valid until{" "}
-
-                                                            {
-                                                                promotion.endDate
-                                                            }
-
-                                                        </p>
-
-                                                    </button>
-
-                                                )
-                                            )}
+                                            <p className="text-xs text-base-content/60 mt-1">
+                                                Select a promotion code
+                                            </p>
 
                                         </div>
 
-                                    )}
+                                        {availablePromotions.map(
+                                            (promotion) => (
+
+                                                <button
+                                                    key={
+                                                        promotion.promotionID
+                                                    }
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleSelectPromotion(
+                                                            promotion
+                                                        )
+                                                    }
+                                                    className="w-full text-left px-4 py-3 hover:bg-base-200 transition border-b border-base-300 last:border-b-0"
+                                                >
+
+                                                    <div className="flex justify-between items-center">
+
+                                                        <span className="badge badge-primary font-semibold">
+                                                            {
+                                                                promotion.promotionCode
+                                                            }
+                                                        </span>
+
+                                                        <span className="font-bold text-primary">
+                                                            {
+                                                                promotion.discountPercentage
+                                                            }%
+                                                        </span>
+
+                                                    </div>
+
+                                                    <p className="text-sm mt-2">
+                                                        {
+                                                            promotion.description
+                                                        }
+                                                    </p>
+
+                                                    <p className="text-xs text-base-content/60 mt-1">
+
+                                                        {
+                                                            promotion.movieScope ===
+                                                            "selected"
+                                                                ? "Selected Movies"
+                                                                : "All Movies"
+                                                        }
+
+                                                        {" • "}
+
+                                                        {
+                                                            promotion.applicableDay ||
+                                                            "All Days"
+                                                        }
+
+                                                        {" • "}
+
+                                                        Valid until{" "}
+
+                                                        {
+                                                            promotion.endDate
+                                                        }
+
+                                                    </p>
+
+                                                </button>
+
+                                            )
+                                        )}
+
+                                    </div>
+                                )}
 
                                 {promotionMessage && (
 
@@ -2073,20 +1723,17 @@ function Payment() {
                                                 : "btn-outline"
                                         }`}
                                     >
-
                                         <FaCreditCard />
-
                                         Card
-
                                     </button>
 
                                     <button
                                         type="button"
-                                        onClick={() => {
+                                        onClick={() =>
                                             setPaymentMethod(
                                                 "mobile banking"
-                                            );
-                                        }}
+                                            )
+                                        }
                                         className={`btn h-20 flex-col ${
                                             paymentMethod ===
                                             "mobile banking"
@@ -2094,11 +1741,8 @@ function Payment() {
                                                 : "btn-outline"
                                         }`}
                                     >
-
                                         <FaMobileAlt />
-
                                         Mobile Banking
-
                                     </button>
 
                                     <button
@@ -2115,11 +1759,8 @@ function Payment() {
                                                 : "btn-outline"
                                         }`}
                                     >
-
                                         <FaMoneyBillWave />
-
                                         Cash
-
                                     </button>
 
                                 </div>
@@ -2175,7 +1816,6 @@ function Payment() {
                                         </div>
 
                                     </div>
-
                                 )}
 
                                 {paymentMethod ===
@@ -2207,7 +1847,6 @@ function Payment() {
                                                         : "btn-outline"
                                                 }`}
                                             >
-
                                                 <img
                                                     src={
                                                         bkashLogo
@@ -2215,7 +1854,6 @@ function Payment() {
                                                     alt="bKash"
                                                     className="h-18 w-auto object-contain"
                                                 />
-
                                             </button>
 
                                             <button
@@ -2232,15 +1870,13 @@ function Payment() {
                                                         : "btn-outline"
                                                 }`}
                                             >
-
                                                 <img
                                                     src={
                                                         nagadLogo
                                                     }
                                                     alt="Nagad"
-                                                   className="h-18 w-auto object-contain"
+                                                    className="h-18 w-auto object-contain"
                                                 />
-
                                             </button>
 
                                             <button
@@ -2257,7 +1893,6 @@ function Payment() {
                                                         : "btn-outline"
                                                 }`}
                                             >
-
                                                 <img
                                                     src={
                                                         upayLogo
@@ -2265,7 +1900,6 @@ function Payment() {
                                                     alt="Upay"
                                                     className="h-18 w-auto object-contain"
                                                 />
-
                                             </button>
 
                                         </div>
@@ -2311,7 +1945,6 @@ function Payment() {
                                         </div>
 
                                     </div>
-
                                 )}
 
                                 {paymentMethod ===
@@ -2327,7 +1960,6 @@ function Payment() {
                                         </span>
 
                                     </div>
-
                                 )}
 
                                 <div className="form-control mt-6">
@@ -2375,16 +2007,12 @@ function Payment() {
                             </form>
 
                         </div>
-
                     </div>
 
                 </div>
-
             </div>
-
         </div>
     );
-
 }
 
 export default Payment;

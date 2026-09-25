@@ -261,28 +261,7 @@ function Login() {
 
                     </p>
 
-                    <div className="alert alert-info mt-5">
-
-                        <FaUserShield />
-
-                        <div>
-
-                            <h3 className="font-bold">
-                                Admin Login
-                            </h3>
-
-                            <p className="text-sm mt-1">
-                                Email: admin@moviebook.com
-                            </p>
-
-                            <p className="text-sm">
-                                Password: admin123
-                            </p>
-
-                        </div>
-
-                    </div>
-
+                   
                 </div>
 
             </div>

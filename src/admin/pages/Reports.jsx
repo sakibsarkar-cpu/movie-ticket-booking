@@ -15,7 +15,6 @@ import {
 const API_URL = "http://localhost:5000/api";
 
 function Reports() {
-
     const [bookings, setBookings] = useState([]);
     const [movies, setMovies] = useState([]);
     const [branches, setBranches] = useState([]);
@@ -30,11 +29,8 @@ function Reports() {
     const [reportSubmitted, setReportSubmitted] = useState(false);
 
     useEffect(() => {
-
         const loadData = async () => {
-
             try {
-
                 setLoading(true);
                 setErrorMessage("");
 
@@ -113,9 +109,7 @@ function Reports() {
                         ? schedulesData
                         : []
                 );
-
             } catch (error) {
-
                 console.error(
                     "Failed to load report data:",
                     error
@@ -130,35 +124,29 @@ function Reports() {
                 setMovies([]);
                 setBranches([]);
                 setSchedules([]);
-
             } finally {
-
                 setLoading(false);
-
             }
-
         };
 
         loadData();
-
     }, []);
 
     const getSchedule = (booking) => {
-
         if (!booking) {
             return null;
         }
 
-        return schedules.find(
-            (schedule) =>
-                Number(schedule.scheduleID) ===
-                Number(booking.scheduleID)
-        ) || null;
-
+        return (
+            schedules.find(
+                (schedule) =>
+                    Number(schedule.scheduleID) ===
+                    Number(booking.scheduleID)
+            ) || null
+        );
     };
 
     const getBranch = (booking) => {
-
         if (!booking) {
             return null;
         }
@@ -168,7 +156,6 @@ function Reports() {
             booking.branchID !== null &&
             booking.branchID !== ""
         ) {
-
             const branchByID = branches.find(
                 (branch) =>
                     Number(branch.branchID) ===
@@ -178,7 +165,6 @@ function Reports() {
             if (branchByID) {
                 return branchByID;
             }
-
         }
 
         const schedule = getSchedule(booking);
@@ -187,7 +173,6 @@ function Reports() {
             schedule?.branchID !== undefined &&
             schedule?.branchID !== null
         ) {
-
             const branchByScheduleID = branches.find(
                 (branch) =>
                     Number(branch.branchID) ===
@@ -197,11 +182,9 @@ function Reports() {
             if (branchByScheduleID) {
                 return branchByScheduleID;
             }
-
         }
 
         if (booking.branchName) {
-
             const branchByName = branches.find(
                 (branch) =>
                     branch.branchName ===
@@ -211,15 +194,12 @@ function Reports() {
             if (branchByName) {
                 return branchByName;
             }
-
         }
 
         return null;
-
     };
 
     const getMovie = (booking) => {
-
         if (!booking) {
             return null;
         }
@@ -240,7 +220,6 @@ function Reports() {
             schedule?.movieID !== undefined &&
             schedule?.movieID !== null
         ) {
-
             const movieByScheduleID = movies.find(
                 (movie) =>
                     Number(movie.movieID) ===
@@ -250,15 +229,12 @@ function Reports() {
             if (movieByScheduleID) {
                 return movieByScheduleID;
             }
-
         }
 
         return null;
-
     };
 
     const getSelectedSeats = (booking) => {
-
         if (Array.isArray(booking.selectedSeats)) {
             return booking.selectedSeats;
         }
@@ -268,14 +244,12 @@ function Reports() {
         }
 
         return [];
-
     };
 
-    const confirmedBookingData =
-        bookings.filter(
-            (booking) =>
-                booking.status === "Confirmed"
-        );
+    const confirmedBookingData = bookings.filter(
+        (booking) =>
+            booking.status === "Confirmed"
+    );
 
     const totalBookings = bookings.length;
 
@@ -300,115 +274,85 @@ function Reports() {
             0
         );
 
-    const movieReport =
-        movies.map(
-            (movie) => {
+    const movieReport = movies.map(
+        (movie) => {
+            const movieBookings =
+                confirmedBookingData.filter(
+                    (booking) =>
+                        Number(booking.movieID) ===
+                        Number(movie.movieID)
+                );
 
-                const movieBookings =
-                    confirmedBookingData.filter(
-                        (booking) =>
+            const movieSeats =
+                movieBookings.reduce(
+                    (total, booking) =>
+                        total +
+                        getSelectedSeats(
+                            booking
+                        ).length,
+                    0
+                );
+
+            const movieRevenue =
+                movieBookings.reduce(
+                    (total, booking) =>
+                        total +
+                        Number(
+                            booking.totalAmount ||
+                            0
+                        ),
+                    0
+                );
+
+            return {
+                movieID: movie.movieID,
+                title: movie.title,
+                bookings: movieBookings.length,
+                seats: movieSeats,
+                revenue: movieRevenue,
+            };
+        }
+    );
+
+    const branchReport = branches.map(
+        (branch) => {
+            const branchBookings =
+                confirmedBookingData.filter(
+                    (booking) => {
+                        const bookingBranch =
+                            getBranch(booking);
+
+                        return (
+                            bookingBranch &&
                             Number(
-                                booking.movieID
+                                bookingBranch.branchID
                             ) ===
                             Number(
-                                movie.movieID
+                                branch.branchID
                             )
-                    );
+                        );
+                    }
+                );
 
-                const movieSeats =
-                    movieBookings.reduce(
-                        (total, booking) =>
-                            total +
-                            getSelectedSeats(
-                                booking
-                            ).length,
-                        0
-                    );
+            const branchRevenue =
+                branchBookings.reduce(
+                    (total, booking) =>
+                        total +
+                        Number(
+                            booking.totalAmount ||
+                            0
+                        ),
+                    0
+                );
 
-                const movieRevenue =
-                    movieBookings.reduce(
-                        (total, booking) =>
-                            total +
-                            Number(
-                                booking.totalAmount ||
-                                0
-                            ),
-                        0
-                    );
-
-                return {
-                    movieID:
-                        movie.movieID,
-
-                    title:
-                        movie.title,
-
-                    bookings:
-                        movieBookings.length,
-
-                    seats:
-                        movieSeats,
-
-                    revenue:
-                        movieRevenue,
-                };
-
-            }
-        );
-
-    const branchReport =
-        branches.map(
-            (branch) => {
-
-                const branchBookings =
-                    confirmedBookingData.filter(
-                        (booking) => {
-
-                            const bookingBranch =
-                                getBranch(
-                                    booking
-                                );
-
-                            return (
-                                bookingBranch &&
-                                Number(
-                                    bookingBranch.branchID
-                                ) ===
-                                Number(
-                                    branch.branchID
-                                )
-                            );
-
-                        }
-                    );
-
-                const branchRevenue =
-                    branchBookings.reduce(
-                        (total, booking) =>
-                            total +
-                            Number(
-                                booking.totalAmount ||
-                                0
-                            ),
-                        0
-                    );
-
-                return {
-                    branchID:
-                        branch.branchID,
-
-                    branchName:
-                        branch.branchName,
-
-                    bookings:
-                        branchBookings.length,
-
-                    revenue:
-                        branchRevenue,
-                };
-
-            }
-        );
+            return {
+                branchID: branch.branchID,
+                branchName: branch.branchName,
+                bookings: branchBookings.length,
+                revenue: branchRevenue,
+            };
+        }
+    );
 
     const unknownBranchBookings =
         confirmedBookingData.filter(
@@ -421,8 +365,7 @@ function Reports() {
             (total, booking) =>
                 total +
                 Number(
-                    booking.totalAmount ||
-                    0
+                    booking.totalAmount || 0
                 ),
             0
         );
@@ -433,129 +376,105 @@ function Reports() {
         "cash",
     ];
 
-    const paymentReport =
-        paymentMethods.map(
-            (method) => {
+    const paymentReport = paymentMethods.map(
+        (method) => {
+            const methodBookings =
+                confirmedBookingData.filter(
+                    (booking) =>
+                        String(
+                            booking.paymentMethod ||
+                            ""
+                        ).toLowerCase() ===
+                        method
+                );
 
-                const methodBookings =
-                    confirmedBookingData.filter(
-                        (booking) =>
-                            String(
-                                booking.paymentMethod ||
-                                ""
-                            ).toLowerCase() ===
-                            method
-                    );
+            const methodRevenue =
+                methodBookings.reduce(
+                    (total, booking) =>
+                        total +
+                        Number(
+                            booking.totalAmount ||
+                            0
+                        ),
+                    0
+                );
 
-                const methodRevenue =
-                    methodBookings.reduce(
-                        (total, booking) =>
-                            total +
-                            Number(
-                                booking.totalAmount ||
-                                0
-                            ),
-                        0
-                    );
-
-                return {
-                    method:
-                        method,
-
-                    bookings:
-                        methodBookings.length,
-
-                    revenue:
-                        methodRevenue,
-                };
-
-            }
-        );
+            return {
+                method,
+                bookings: methodBookings.length,
+                revenue: methodRevenue,
+            };
+        }
+    );
 
     const mostPopularMovie =
-        [...movieReport]
-            .sort(
-                (a, b) =>
-                    b.bookings -
-                    a.bookings
-            )[0];
+        [...movieReport].sort(
+            (a, b) =>
+                b.bookings - a.bookings
+        )[0];
 
     const mostPopularBranch =
-        [...branchReport]
-            .sort(
-                (a, b) =>
-                    b.bookings -
-                    a.bookings
-            )[0];
-
-    const reportDates = [
-        ...new Set(
-            schedules
-                .map(
-                    (schedule) =>
-                        schedule.showDate
-                )
-                .filter(Boolean)
-        ),
-    ].sort();
+        [...branchReport].sort(
+            (a, b) =>
+                b.bookings - a.bookings
+        )[0];
 
     const handleSubmitReport = () => {
-
-        if (
-            selectedDate &&
-            selectedBranch &&
-            selectedMovie
-        ) {
-
-            setReportSubmitted(true);
-
+        if (!selectedDate) {
+            return;
         }
 
+        setReportSubmitted(true);
     };
 
     const filteredReportBookings =
         reportSubmitted
-            ? bookings.filter(
-                (booking) => {
+            ? bookings.filter((booking) => {
+                const bookingDate =
+                    booking.showDate ||
+                    getSchedule(booking)?.showDate ||
+                    "";
 
-                    const bookingDate =
-                        booking.showDate ||
-                        getSchedule(booking)?.showDate ||
-                        "";
+                const bookingBranch =
+                    getBranch(booking);
 
-                    const bookingBranch =
-                        getBranch(booking);
+                const bookingMovie =
+                    getMovie(booking);
 
-                    const bookingMovie =
-                        getMovie(booking);
+                const dateMatches =
+                    bookingDate ===
+                    selectedDate;
 
-                    const branchMatches =
+                const branchMatches =
+                    !selectedBranch ||
+                    (
                         bookingBranch &&
                         Number(
                             bookingBranch.branchID
                         ) ===
                         Number(
                             selectedBranch
-                        );
+                        )
+                    );
 
-                    const movieMatches =
+                const movieMatches =
+                    !selectedMovie ||
+                    (
                         bookingMovie &&
                         Number(
                             bookingMovie.movieID
                         ) ===
                         Number(
                             selectedMovie
-                        );
-
-                    return (
-                        bookingDate ===
-                            selectedDate &&
-                        branchMatches &&
-                        movieMatches
+                        )
                     );
 
-                }
-            )
+                return (
+                    dateMatches &&
+                    branchMatches &&
+                    movieMatches
+                );
+            })
             : [];
 
     const filteredConfirmedBookings =
@@ -587,8 +506,7 @@ function Reports() {
             (total, booking) =>
                 total +
                 Number(
-                    booking.totalAmount ||
-                    0
+                    booking.totalAmount || 0
                 ),
             0
         );
@@ -596,54 +514,37 @@ function Reports() {
     const selectedBranchObject =
         branches.find(
             (branch) =>
-                Number(
-                    branch.branchID
-                ) ===
-                Number(
-                    selectedBranch
-                )
+                Number(branch.branchID) ===
+                Number(selectedBranch)
         );
 
     const selectedMovieObject =
         movies.find(
             (movie) =>
-                Number(
-                    movie.movieID
-                ) ===
-                Number(
-                    selectedMovie
-                )
+                Number(movie.movieID) ===
+                Number(selectedMovie)
         );
 
     return (
-
         <div className="min-h-screen bg-base-200 py-10">
-
             <div className="w-[95%] max-w-7xl mx-auto">
 
                 <Link
                     to="/admin/dashboard"
                     className="btn btn-ghost btn-sm mb-6"
                 >
-
                     <FaArrowLeft />
-
                     Back to Dashboard
-
                 </Link>
 
                 <div className="mb-8">
-
                     <div className="flex items-center gap-3">
 
                         <div className="bg-primary/10 text-primary p-3 rounded-lg">
-
                             <FaChartBar className="text-2xl" />
-
                         </div>
 
                         <div>
-
                             <p className="text-primary font-semibold text-sm">
                                 ADMINISTRATION
                             </p>
@@ -655,35 +556,26 @@ function Reports() {
                             <p className="text-base-content/60 mt-1">
                                 View system and booking reports.
                             </p>
-
                         </div>
 
                     </div>
-
                 </div>
 
                 {errorMessage && (
-
                     <div className="alert alert-error mb-8">
-
                         <span>
                             {errorMessage}
                         </span>
-
                     </div>
-
                 )}
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
 
                     <div className="card bg-base-100 shadow-md">
-
                         <div className="card-body">
-
                             <div className="flex justify-between items-center">
 
                                 <div>
-
                                     <p className="text-sm text-base-content/60">
                                         Total Bookings
                                     </p>
@@ -691,28 +583,21 @@ function Reports() {
                                     <p className="text-3xl font-bold mt-2">
                                         {loading
                                             ? "..."
-                                            : totalBookings
-                                        }
+                                            : totalBookings}
                                     </p>
-
                                 </div>
 
                                 <FaTicketAlt className="text-primary text-3xl" />
 
                             </div>
-
                         </div>
-
                     </div>
 
                     <div className="card bg-base-100 shadow-md">
-
                         <div className="card-body">
-
                             <div className="flex justify-between items-center">
 
                                 <div>
-
                                     <p className="text-sm text-base-content/60">
                                         Confirmed Bookings
                                     </p>
@@ -720,28 +605,21 @@ function Reports() {
                                     <p className="text-3xl font-bold text-success mt-2">
                                         {loading
                                             ? "..."
-                                            : confirmedBookings
-                                        }
+                                            : confirmedBookings}
                                     </p>
-
                                 </div>
 
                                 <FaChartBar className="text-success text-3xl" />
 
                             </div>
-
                         </div>
-
                     </div>
 
                     <div className="card bg-base-100 shadow-md">
-
                         <div className="card-body">
-
                             <div className="flex justify-between items-center">
 
                                 <div>
-
                                     <p className="text-sm text-base-content/60">
                                         Total Revenue
                                     </p>
@@ -749,28 +627,21 @@ function Reports() {
                                     <p className="text-3xl font-bold text-primary mt-2">
                                         {loading
                                             ? "..."
-                                            : `৳${totalRevenue}`
-                                        }
+                                            : `৳${totalRevenue}`}
                                     </p>
-
                                 </div>
 
                                 <FaMoneyBillWave className="text-primary text-3xl" />
 
                             </div>
-
                         </div>
-
                     </div>
 
                     <div className="card bg-base-100 shadow-md">
-
                         <div className="card-body">
-
                             <div className="flex justify-between items-center">
 
                                 <div>
-
                                     <p className="text-sm text-base-content/60">
                                         Seats Booked
                                     </p>
@@ -778,147 +649,108 @@ function Reports() {
                                     <p className="text-3xl font-bold mt-2">
                                         {loading
                                             ? "..."
-                                            : totalSeats
-                                        }
+                                            : totalSeats}
                                     </p>
-
                                 </div>
 
                                 <FaUsers className="text-primary text-3xl" />
 
                             </div>
-
                         </div>
-
                     </div>
 
                 </div>
 
                 {!loading &&
                     totalBookings > 0 && (
+                        <div className="grid md:grid-cols-2 gap-6 mb-8">
 
-                    <div className="grid md:grid-cols-2 gap-6 mb-8">
+                            <div className="card bg-base-100 shadow-md">
+                                <div className="card-body">
 
-                        <div className="card bg-base-100 shadow-md">
+                                    <div className="flex items-center gap-3">
 
-                            <div className="card-body">
+                                        <div className="bg-primary/10 text-primary p-3 rounded-lg">
+                                            <FaFilm />
+                                        </div>
 
-                                <div className="flex items-center gap-3">
+                                        <div>
+                                            <p className="text-sm text-base-content/60">
+                                                Most Booked Movie
+                                            </p>
 
-                                    <div className="bg-primary/10 text-primary p-3 rounded-lg">
-
-                                        <FaFilm />
-
-                                    </div>
-
-                                    <div>
-
-                                        <p className="text-sm text-base-content/60">
-                                            Most Booked Movie
-                                        </p>
-
-                                        <h2 className="text-xl font-bold">
-                                            {
-                                                mostPopularMovie?.title ||
-                                                "No data"
-                                            }
-                                        </h2>
+                                            <h2 className="text-xl font-bold">
+                                                {mostPopularMovie?.title ||
+                                                    "No data"}
+                                            </h2>
+                                        </div>
 
                                     </div>
+
+                                    <div className="divider my-2"></div>
+
+                                    <p className="text-base-content/60">
+                                        Bookings:
+                                        <span className="font-bold text-base-content ml-2">
+                                            {mostPopularMovie?.bookings ||
+                                                0}
+                                        </span>
+                                    </p>
 
                                 </div>
+                            </div>
 
-                                <div className="divider my-2"></div>
+                            <div className="card bg-base-100 shadow-md">
+                                <div className="card-body">
 
-                                <p className="text-base-content/60">
+                                    <div className="flex items-center gap-3">
 
-                                    Bookings:
+                                        <div className="bg-primary/10 text-primary p-3 rounded-lg">
+                                            <FaBuilding />
+                                        </div>
 
-                                    <span className="font-bold text-base-content ml-2">
+                                        <div>
+                                            <p className="text-sm text-base-content/60">
+                                                Most Booked Cinema
+                                            </p>
 
-                                        {
-                                            mostPopularMovie?.bookings ||
-                                            0
-                                        }
+                                            <h2 className="text-xl font-bold">
+                                                {mostPopularBranch?.branchName ||
+                                                    "No data"}
+                                            </h2>
+                                        </div>
 
-                                    </span>
+                                    </div>
 
-                                </p>
+                                    <div className="divider my-2"></div>
 
+                                    <p className="text-base-content/60">
+                                        Bookings:
+                                        <span className="font-bold text-base-content ml-2">
+                                            {mostPopularBranch?.bookings ||
+                                                0}
+                                        </span>
+                                    </p>
+
+                                </div>
                             </div>
 
                         </div>
-
-                        <div className="card bg-base-100 shadow-md">
-
-                            <div className="card-body">
-
-                                <div className="flex items-center gap-3">
-
-                                    <div className="bg-primary/10 text-primary p-3 rounded-lg">
-
-                                        <FaBuilding />
-
-                                    </div>
-
-                                    <div>
-
-                                        <p className="text-sm text-base-content/60">
-                                            Most Booked Cinema
-                                        </p>
-
-                                        <h2 className="text-xl font-bold">
-                                            {
-                                                mostPopularBranch?.branchName ||
-                                                "No data"
-                                            }
-                                        </h2>
-
-                                    </div>
-
-                                </div>
-
-                                <div className="divider my-2"></div>
-
-                                <p className="text-base-content/60">
-
-                                    Bookings:
-
-                                    <span className="font-bold text-base-content ml-2">
-
-                                        {
-                                            mostPopularBranch?.bookings ||
-                                            0
-                                        }
-
-                                    </span>
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                )}
+                    )}
 
                 <div className="card bg-base-100 shadow-md mb-8">
-
                     <div className="card-body">
 
                         <div className="flex items-center gap-3 mb-2">
-
                             <FaSearch className="text-primary text-xl" />
 
                             <h2 className="text-2xl font-bold">
                                 Booking Report
                             </h2>
-
                         </div>
 
                         <p className="text-sm text-base-content/60">
-                            Select a date, cinema branch, and movie to view detailed booking information.
+                            Select a date to view booking information. Branch and movie filters are optional.
                         </p>
 
                         <div className="divider"></div>
@@ -926,16 +758,14 @@ function Reports() {
                         <div className="grid md:grid-cols-3 gap-5">
 
                             <div>
-
                                 <label className="label">
-
                                     <span className="label-text font-semibold">
                                         Select Date
                                     </span>
-
                                 </label>
 
-                                <select
+                                <input
+                                    type="date"
                                     value={selectedDate}
                                     onChange={(event) => {
                                         setSelectedDate(
@@ -943,38 +773,15 @@ function Reports() {
                                         );
                                         setReportSubmitted(false);
                                     }}
-                                    className="select select-bordered w-full"
-                                >
-
-                                    <option value="">
-                                        Select Date
-                                    </option>
-
-                                    {reportDates.map(
-                                        (date) => (
-
-                                            <option
-                                                key={date}
-                                                value={date}
-                                            >
-                                                {date}
-                                            </option>
-
-                                        )
-                                    )}
-
-                                </select>
-
+                                    className="input input-bordered w-full"
+                                />
                             </div>
 
                             <div>
-
                                 <label className="label">
-
                                     <span className="label-text font-semibold">
                                         Select Cinema Branch
                                     </span>
-
                                 </label>
 
                                 <select
@@ -989,12 +796,11 @@ function Reports() {
                                 >
 
                                     <option value="">
-                                        Select Branch
+                                        All Branches
                                     </option>
 
                                     {branches.map(
                                         (branch) => (
-
                                             <option
                                                 key={
                                                     branch.branchID
@@ -1007,22 +813,17 @@ function Reports() {
                                                     branch.branchName
                                                 }
                                             </option>
-
                                         )
                                     )}
 
                                 </select>
-
                             </div>
 
                             <div>
-
                                 <label className="label">
-
                                     <span className="label-text font-semibold">
                                         Select Movie
                                     </span>
-
                                 </label>
 
                                 <select
@@ -1037,12 +838,11 @@ function Reports() {
                                 >
 
                                     <option value="">
-                                        Select Movie
+                                        All Movies
                                     </option>
 
                                     {movies.map(
                                         (movie) => (
-
                                             <option
                                                 key={
                                                     movie.movieID
@@ -1055,12 +855,10 @@ function Reports() {
                                                     movie.title
                                                 }
                                             </option>
-
                                         )
                                     )}
 
                                 </select>
-
                             </div>
 
                         </div>
@@ -1071,24 +869,16 @@ function Reports() {
                                 onClick={
                                     handleSubmitReport
                                 }
-                                disabled={
-                                    !selectedDate ||
-                                    !selectedBranch ||
-                                    !selectedMovie
-                                }
+                                disabled={!selectedDate}
                                 className="btn btn-primary px-10"
                             >
-
                                 <FaSearch />
-
-                                Submit
-
+                                Search Report
                             </button>
 
                         </div>
 
                         {reportSubmitted && (
-
                             <div className="mt-8">
 
                                 <div className="bg-base-200 rounded-lg p-5 mb-6">
@@ -1100,47 +890,35 @@ function Reports() {
                                     <div className="grid md:grid-cols-3 gap-4">
 
                                         <div>
-
                                             <p className="text-sm text-base-content/60">
                                                 Date
                                             </p>
 
                                             <p className="font-semibold">
-                                                {
-                                                    selectedDate
-                                                }
+                                                {selectedDate}
                                             </p>
-
                                         </div>
 
                                         <div>
-
                                             <p className="text-sm text-base-content/60">
                                                 Cinema Branch
                                             </p>
 
                                             <p className="font-semibold">
-                                                {
-                                                    selectedBranchObject?.branchName ||
-                                                    "Unknown"
-                                                }
+                                                {selectedBranchObject?.branchName ||
+                                                    "All Branches"}
                                             </p>
-
                                         </div>
 
                                         <div>
-
                                             <p className="text-sm text-base-content/60">
                                                 Movie
                                             </p>
 
                                             <p className="font-semibold">
-                                                {
-                                                    selectedMovieObject?.title ||
-                                                    "Unknown"
-                                                }
+                                                {selectedMovieObject?.title ||
+                                                    "All Movies"}
                                             </p>
-
                                         </div>
 
                                     </div>
@@ -1150,7 +928,6 @@ function Reports() {
                                 <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
 
                                     <div className="bg-base-200 rounded-lg p-4">
-
                                         <p className="text-sm text-base-content/60">
                                             Total Bookings
                                         </p>
@@ -1160,11 +937,9 @@ function Reports() {
                                                 filteredReportBookings.length
                                             }
                                         </p>
-
                                     </div>
 
                                     <div className="bg-base-200 rounded-lg p-4">
-
                                         <p className="text-sm text-base-content/60">
                                             Confirmed
                                         </p>
@@ -1174,11 +949,9 @@ function Reports() {
                                                 filteredConfirmedBookings.length
                                             }
                                         </p>
-
                                     </div>
 
                                     <div className="bg-base-200 rounded-lg p-4">
-
                                         <p className="text-sm text-base-content/60">
                                             Cancelled
                                         </p>
@@ -1188,11 +961,9 @@ function Reports() {
                                                 filteredCancelledBookings.length
                                             }
                                         </p>
-
                                     </div>
 
                                     <div className="bg-base-200 rounded-lg p-4">
-
                                         <p className="text-sm text-base-content/60">
                                             Seats Sold
                                         </p>
@@ -1202,11 +973,9 @@ function Reports() {
                                                 filteredSeats
                                             }
                                         </p>
-
                                     </div>
 
                                     <div className="bg-base-200 rounded-lg p-4">
-
                                         <p className="text-sm text-base-content/60">
                                             Revenue
                                         </p>
@@ -1217,7 +986,6 @@ function Reports() {
                                                 filteredRevenue
                                             }
                                         </p>
-
                                     </div>
 
                                 </div>
@@ -1230,8 +998,18 @@ function Reports() {
                                         <table className="table">
 
                                             <thead>
-
                                                 <tr>
+                                                     
+                                                     <th>
+                                                        Date
+                                                    </th>
+                                                    <th>
+                                                        Branch
+                                                    </th>
+
+                                                    <th>
+                                                        Movie
+                                                    </th>
 
                                                     <th>
                                                         Customer
@@ -1256,9 +1034,7 @@ function Reports() {
                                                     <th>
                                                         Status
                                                     </th>
-
                                                 </tr>
-
                                             </thead>
 
                                             <tbody>
@@ -1274,13 +1050,32 @@ function Reports() {
                                                                 booking
                                                             );
 
+                                                        const branch =
+                                                            getBranch(
+                                                                booking
+                                                            );
+
+                                                        const movie =
+                                                            getMovie(
+                                                                booking
+                                                            );
+
                                                         const seats =
                                                             getSelectedSeats(
                                                                 booking
                                                             );
 
-                                                        return (
+                                                        const bookingDate =
+                                                            booking.showDate ||
+                                                            schedule?.showDate ||
+                                                            "N/A";
 
+                                                        const startTime =
+                                                            schedule?.startTime ||
+                                                            booking.startTime ||
+                                                            "N/A";
+
+                                                        return (
                                                             <tr
                                                                 key={
                                                                     booking._id ||
@@ -1288,9 +1083,30 @@ function Reports() {
                                                                     index
                                                                 }
                                                             >
+                                                                
+                                                                <td>
+                                                                    {
+                                                                        bookingDate
+                                                                    }
+                                                                </td>
 
                                                                 <td>
+                                                                    {
+                                                                        branch?.branchName ||
+                                                                        booking.branchName ||
+                                                                        "Unknown"
+                                                                    }
+                                                                </td>
 
+                                                                <td className="font-semibold">
+                                                                    {
+                                                                        movie?.title ||
+                                                                        booking.movieTitle ||
+                                                                        "Unknown"
+                                                                    }
+                                                                </td>
+
+                                                                <td>
                                                                     <div className="font-semibold">
                                                                         {
                                                                             booking.customerName ||
@@ -1304,14 +1120,11 @@ function Reports() {
                                                                             ""
                                                                         }
                                                                     </div>
-
                                                                 </td>
-
+                                                               
                                                                 <td>
                                                                     {
-                                                                        schedule?.startTime ||
-                                                                        booking.startTime ||
-                                                                        "N/A"
+                                                                        startTime
                                                                     }
                                                                 </td>
 
@@ -1337,13 +1150,15 @@ function Reports() {
                                                                 </td>
 
                                                                 <td>
-
                                                                     <span
                                                                         className={
                                                                             booking.status ===
                                                                             "Confirmed"
                                                                                 ? "badge badge-success"
-                                                                                : "badge badge-error"
+                                                                                : booking.status ===
+                                                                                  "Cancelled"
+                                                                                ? "badge badge-error"
+                                                                                : "badge badge-warning"
                                                                         }
                                                                     >
                                                                         {
@@ -1351,13 +1166,10 @@ function Reports() {
                                                                             "Unknown"
                                                                         }
                                                                     </span>
-
                                                                 </td>
 
                                                             </tr>
-
                                                         );
-
                                                     }
                                                 )}
 
@@ -1376,7 +1188,7 @@ function Reports() {
                                             </h3>
 
                                             <p className="text-sm text-base-content/60 mt-1">
-                                                No bookings were found for the selected date, cinema branch, and movie.
+                                                No bookings were found for the selected date and filters.
                                             </p>
 
                                         </div>
@@ -1386,11 +1198,9 @@ function Reports() {
                                 </div>
 
                             </div>
-
                         )}
 
                     </div>
-
                 </div>
 
                 <div className="card bg-base-100 shadow-md mb-8">
@@ -1418,31 +1228,13 @@ function Reports() {
                             <table className="table">
 
                                 <thead>
-
                                     <tr>
-
-                                        <th>
-                                            ID
-                                        </th>
-
-                                        <th>
-                                            Movie
-                                        </th>
-
-                                        <th>
-                                            Bookings
-                                        </th>
-
-                                        <th>
-                                            Seats
-                                        </th>
-
-                                        <th>
-                                            Revenue
-                                        </th>
-
+                                        <th>ID</th>
+                                        <th>Movie</th>
+                                        <th>Bookings</th>
+                                        <th>Seats</th>
+                                        <th>Revenue</th>
                                     </tr>
-
                                 </thead>
 
                                 <tbody>
@@ -1450,23 +1242,18 @@ function Reports() {
                                     {loading ? (
 
                                         <tr>
-
                                             <td
                                                 colSpan="5"
                                                 className="text-center py-8"
                                             >
-
                                                 <span className="loading loading-spinner loading-md"></span>
-
                                             </td>
-
                                         </tr>
 
                                     ) : movieReport.length > 0 ? (
 
                                         movieReport.map(
                                             (movie) => (
-
                                                 <tr
                                                     key={
                                                         movie.movieID
@@ -1505,21 +1292,18 @@ function Reports() {
                                                     </td>
 
                                                 </tr>
-
                                             )
                                         )
 
                                     ) : (
 
                                         <tr>
-
                                             <td
                                                 colSpan="5"
                                                 className="text-center py-8 text-base-content/60"
                                             >
                                                 No movie data available.
                                             </td>
-
                                         </tr>
 
                                     )}
@@ -1559,23 +1343,11 @@ function Reports() {
                             <table className="table">
 
                                 <thead>
-
                                     <tr>
-
-                                        <th>
-                                            Cinema Branch
-                                        </th>
-
-                                        <th>
-                                            Bookings
-                                        </th>
-
-                                        <th>
-                                            Revenue
-                                        </th>
-
+                                        <th>Cinema Branch</th>
+                                        <th>Bookings</th>
+                                        <th>Revenue</th>
                                     </tr>
-
                                 </thead>
 
                                 <tbody>
@@ -1583,23 +1355,18 @@ function Reports() {
                                     {loading ? (
 
                                         <tr>
-
                                             <td
                                                 colSpan="3"
                                                 className="text-center py-8"
                                             >
-
                                                 <span className="loading loading-spinner loading-md"></span>
-
                                             </td>
-
                                         </tr>
 
                                     ) : branchReport.length > 0 ? (
 
                                         branchReport.map(
                                             (branch) => (
-
                                                 <tr
                                                     key={
                                                         branch.branchID
@@ -1626,21 +1393,18 @@ function Reports() {
                                                     </td>
 
                                                 </tr>
-
                                             )
                                         )
 
                                     ) : (
 
                                         <tr>
-
                                             <td
                                                 colSpan="3"
                                                 className="text-center py-8 text-base-content/60"
                                             >
                                                 No cinema data available.
                                             </td>
-
                                         </tr>
 
                                     )}
@@ -1669,7 +1433,6 @@ function Reports() {
                                             </td>
 
                                         </tr>
-
                                     )}
 
                                 </tbody>
@@ -1707,30 +1470,17 @@ function Reports() {
                             <table className="table">
 
                                 <thead>
-
                                     <tr>
-
-                                        <th>
-                                            Payment Method
-                                        </th>
-
-                                        <th>
-                                            Bookings
-                                        </th>
-
-                                        <th>
-                                            Revenue
-                                        </th>
-
+                                        <th>Payment Method</th>
+                                        <th>Bookings</th>
+                                        <th>Revenue</th>
                                     </tr>
-
                                 </thead>
 
                                 <tbody>
 
                                     {paymentReport.map(
                                         (payment) => (
-
                                             <tr
                                                 key={
                                                     payment.method
@@ -1757,7 +1507,6 @@ function Reports() {
                                                 </td>
 
                                             </tr>
-
                                         )
                                     )}
 
@@ -1792,15 +1541,11 @@ function Reports() {
                         </div>
 
                     </div>
-
                 )}
 
             </div>
-
         </div>
-
     );
-
 }
 
 export default Reports;

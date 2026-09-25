@@ -6,32 +6,7 @@ import {
     FaStar,
     FaFilm,
 } from "react-icons/fa";
-
-import avatar from "../assets/posters/avatar.jpg";
-import avengersEndgame from "../assets/posters/avengers-endgame.jpg";
-import darkKnight from "../assets/posters/dark-knight.jpg";
-import inception from "../assets/posters/inception.jpg";
-import insidious from "../assets/posters/insidious.jpg";
-import interstellar from "../assets/posters/interstellar.jpg";
-import johnWick from "../assets/posters/john-wick.jpg";
-import matrix from "../assets/posters/matrix.jpg";
-import parasite from "../assets/posters/parasite.jpg";
-import surongo from "../assets/posters/surongo.jpg";
-import theParadise from "../assets/posters/the-paradise.jpg";
-
-const posterImages = {
-    "avatar.jpg": avatar,
-    "avengers-endgame.jpg": avengersEndgame,
-    "dark-knight.jpg": darkKnight,
-    "inception.jpg": inception,
-    "insidious.jpg": insidious,
-    "interstellar.jpg": interstellar,
-    "john-wick.jpg": johnWick,
-    "matrix.jpg": matrix,
-    "parasite.jpg": parasite,
-    "surongo.jpg": surongo,
-    "the-paradise.jpg": theParadise,
-};
+import { getPoster } from "../utils/posterImages";
 
 function AIRecommendations() {
 
@@ -434,7 +409,7 @@ function AIRecommendations() {
 
                                         <button
                                             type="submit"
-                                            className="btn btn-primary flex-1"
+                                            className="btn btn-primary  flex-1"
                                         >
                                             <FaRobot />
                                             Get Recommendations
@@ -497,11 +472,11 @@ function AIRecommendations() {
                                                     <figure className="h-72">
 
                                                         {movie.image &&
-                                                        posterImages[movie.image] ? (
+                                                        getPoster(movie.image) ? (
 
                                                             <img
                                                                 src={
-                                                                    posterImages[movie.image]
+                                                                    getPoster(movie.image)
                                                                 }
                                                                 alt={
                                                                     movie.title

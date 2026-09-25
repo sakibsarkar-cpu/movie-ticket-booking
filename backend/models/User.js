@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema({
         default: "active"
     }
 }, {
-    timestamps: true
+    timestamps: true // This tells Mongoose to automatically maintain createdAt and updatedAt
 });
 
 const User = mongoose.model("User", userSchema);

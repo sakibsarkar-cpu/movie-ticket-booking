@@ -347,53 +347,60 @@ function ManageShowSchedules() {
             return;
         }
 
-        const normalizeTime = (time) => {
-            const match = time.match(
-                /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i
-            );
+      const normalizeTime = (time) => {
+    const match = time
+        .trim()
+        .match(
+            /^(0?[1-9]|1[0-2]):([0-5][0-9])\s*(AM|PM)$/i
+        );
 
-            if (!match) {
-                return time;
-            }
+    if (!match) {
+        return null;
+    }
 
-            let hour = Number(match[1]);
-            const minute = Number(match[2]);
-            const period = match[3];
+    const hour = match[1].padStart(2, "0");
+    const minute = match[2];
+    const period = match[3].toUpperCase();
 
-            if (period) {
-                if (
-                    period.toUpperCase() ===
-                        "PM" &&
-                    hour !== 12
-                ) {
-                    hour += 12;
-                }
+    return {
+        formatted: `${hour}:${minute} ${period}`,
+        minutes:
+            (Number(match[1]) % 12) * 60 +
+            Number(minute) +
+            (period === "PM" ? 720 : 0)
+    };
+};
+       const normalizedStartTime = normalizeTime(
+    formData.startTime
+);
 
-                if (
-                    period.toUpperCase() ===
-                        "AM" &&
-                    hour === 12
-                ) {
-                    hour = 0;
-                }
-            }
+const normalizedEndTime = normalizeTime(
+    formData.endTime
+);
 
-            return hour * 60 + minute;
-        };
+if (!normalizedStartTime) {
+    alert(
+        "Start time must be in the format HH:MM AM/PM."
+    );
+    return;
+}
 
-        if (
-            normalizeTime(
-                formData.startTime
-            ) >=
-            normalizeTime(
-                formData.endTime
-            )
-        ) {
-            alert(
-                "End time must be later than start time."
-            );
-            return;
-        }
+if (!normalizedEndTime) {
+    alert(
+        "End time must be in the format HH:MM AM/PM."
+    );
+    return;
+}
+
+if (
+    normalizedStartTime.minutes >=
+    normalizedEndTime.minutes
+) {
+    alert(
+        "End time must be later than start time."
+    );
+    return;
+}
 
         if (
             !formData.ticketPrice ||
@@ -505,12 +512,12 @@ function ManageShowSchedules() {
                 Number(formData.screenID),
             screenName:
                 selectedScreen.screenName,
-            showDate:
+          showDate:
                 formData.showDate,
-            startTime:
-                formData.startTime,
-            endTime:
-                formData.endTime,
+        startTime:
+                normalizedStartTime.formatted,
+        endTime:
+                normalizedEndTime.formatted,
             ticketPrice:
                 Number(formData.ticketPrice),
             status:
@@ -920,9 +927,12 @@ function ManageShowSchedules() {
                                                 handleInputChange
                                             }
                                             placeholder="10:00 AM"
+                                             pattern="^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$"
+                                              title="Enter time in HH:MM AM/PM format, e.g. 10:00 AM"
                                             className="input input-bordered w-full"
                                             required
                                         />
+
                                     </div>
 
                                     <div className="form-control">
@@ -942,6 +952,8 @@ function ManageShowSchedules() {
                                                 handleInputChange
                                             }
                                             placeholder="12:30 PM"
+                                             pattern="^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$"
+                                              title="Enter time in HH:MM AM/PM format, e.g. 12:30 PM"
                                             className="input input-bordered w-full"
                                             required
                                         />
